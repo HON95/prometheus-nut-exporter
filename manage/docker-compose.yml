@@ -1,0 +1,20 @@
+# Docker Compose file for dev setup
+
+version: "3.7"
+
+services:
+  app:
+    container_name: prometheus-nut-exporter_dev
+    #image: prometheus-nut-exporter:dev
+    build:
+      context: ..
+      args:
+        - APP_ENV=dev
+    environment:
+      - TZ=Europe/Oslo
+      - RUST_BACKTRACE=1
+      - HTTP_PORT=9999
+      - HTTP_CONN_TIMEOUT=5
+      - LOG_REQUESTS_CONSOLE=true
+    ports:
+      - 9999:9999/tcp

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::fmt;
 use std::io::{BufRead, Write};
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
@@ -81,32 +82,67 @@ impl fmt::Display for HttpParseError {
     }
 }
 
-static PORT: u16 = 9999;
-static CLIENT_CONN_TIMEOUT_S: u64 = 5;
-static LOG_REQUESTS_CONSOLE: bool = true;
-
-fn main() {
-    run_server();
+struct Config {
+    http_port: u16,
+    http_conn_timeout: u64,
+    log_requests_console: bool,
 }
 
-fn run_server() {
-    let endpoint = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), PORT);
+impl Config {
+    const DEFAULT_HTTP_PORT: u16 = 9999;
+    const DEFAULT_HTTP_CONN_TIMEOUT: u64 = 10; // s
+    const DEFAULT_LOG_REQUESTS_CONSOLE: bool = true;
+}
+
+fn main() {
+    let config: Config = read_config();
+    run_server(&config);
+}
+
+fn read_config() -> Config {
+    let mut config = Config {
+        http_port: Config::DEFAULT_HTTP_PORT,
+        http_conn_timeout: Config::DEFAULT_HTTP_CONN_TIMEOUT,
+        log_requests_console: Config::DEFAULT_LOG_REQUESTS_CONSOLE,
+    };
+
+    if let Ok(http_port_str) = env::var("HTTP_PORT") {
+        if let Ok(http_port) = http_port_str.parse::<u16>() {
+            config.http_port = http_port;
+        }
+    }
+    if let Ok(http_conn_timeout_str) = env::var("HTTP_CONN_TIMEOUT") {
+        if let Ok(http_conn_timeout) = http_conn_timeout_str.parse::<u64>() {
+            config.http_conn_timeout = http_conn_timeout;
+        }
+    }
+    if let Ok(log_requests_console_str) = env::var("LOG_REQUESTS_CONSOLE") {
+        if let Ok(log_requests_console) = log_requests_console_str.parse::<bool>() {
+            config.log_requests_console = log_requests_console;
+        }
+    }
+
+    config
+}
+
+fn run_server(config: &Config) {
+    let endpoint = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), config.http_port);
     let listener: TcpListener = TcpListener::bind(endpoint).expect(&format!("Error binding to endpoint {}.", endpoint));
     println!("Listening on: {}\n", endpoint);
 
     for stream in listener.incoming() {
         match stream {
-            Ok(stream) => handle_client(stream),
-            Err(err) => log_request("UNKNOWN".to_owned(), format!("Connection error: {}", err)),
+            Ok(stream) => handle_client(&config, stream),
+            Err(err) => log_request(&config, None, format!("Connection error: {}", err)),
         }
     }
 }
 
-fn handle_client(tcp_stream: TcpStream) {
+fn handle_client(config: &Config, tcp_stream: TcpStream) {
     let peer_addr = tcp_stream.peer_addr().unwrap().to_string();
 
     // Set RW timeouts
-    let timeout: Option<Duration> = Some(Duration::new(CLIENT_CONN_TIMEOUT_S, 0));
+    let timeout: Option<Duration> = Some(Duration::new(config.http_conn_timeout, 0));
     tcp_stream.set_read_timeout(timeout).unwrap();
     tcp_stream.set_write_timeout(timeout).unwrap();
 
@@ -119,22 +155,23 @@ fn handle_client(tcp_stream: TcpStream) {
     let response;
     match request_res {
         Ok(request) => {
-            log_request(peer_addr, request.to_string());
+            log_request(&config, Some(peer_addr), request.to_string());
             response = handle_request(request);
         },
         Err(err) => {
-            log_request(peer_addr, format!("Request error: {}", err.message));
+            log_request(&config, Some(peer_addr), format!("Request error: {}", err.message));
             response = build_http_response(HTTP_STATUS_BAD_REQUEST, None, Some(err.message));
         },
     }
 
-    send_http_response(&mut stream, response);
+    send_http_response(&config, &mut stream, response);
 }
 
-fn log_request(peer_addr: String, message: String) {
-    if LOG_REQUESTS_CONSOLE {
+fn log_request(config: &Config, peer_addr_opt: Option<String>, message: String) {
+    if config.log_requests_console {
         // ISO 8601
         let local_time = Local::now().format("%+").to_string();
+        let peer_addr = peer_addr_opt.unwrap_or("UNKNOWN".to_string());
         println!("{} {} {}", local_time, peer_addr, message);
     }
 }
@@ -164,8 +201,8 @@ fn parse_http_request(stream: &mut BufStream<TcpStream>) -> Result<SimpleHttpReq
                     break;
                 }
             },
-            Err(err) => {
-                return Err(HttpParseError::new(format!("Failed to read line: {}", err)));
+            Err(_) => {
+                return Err(HttpParseError::new("Timed out.".to_owned()));
             },
         }
     }
@@ -306,13 +343,13 @@ fn build_http_response(status: &str, content_type_opt: Option<&str>, content_opt
     )
 }
 
-fn send_http_response(stream: &mut BufStream<TcpStream>, response: String) {
+fn send_http_response(config: &Config, stream: &mut BufStream<TcpStream>, response: String) {
     let result = stream.write_all(response.as_bytes());
     match result {
         Ok(_) => {
         },
         Err(err) => {
-            eprintln!("Failed to send response: {}", err);
+            log_request(&config, None, format!("Failed to send response: {}", err))
         }
     }
 }

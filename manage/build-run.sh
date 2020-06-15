@@ -2,8 +2,8 @@
 
 set -eu
 
-DIR="$(dirname "${BASH_SOURCE[0]}")"
+DC="docker-compose -f manage/docker-compose.yml"
 
-"$DIR/build.sh"
-echo
-"$DIR/run.sh"
+$DC build
+
+$DC up
