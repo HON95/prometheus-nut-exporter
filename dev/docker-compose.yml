@@ -12,6 +12,7 @@ services:
       - TZ=Europe/Oslo
       - RUST_BACKTRACE=1
       - HTTP_PORT=9995
+      - HTTP_PATH=/nut
       - LOG_REQUESTS_CONSOLE=true
     ports:
       - "127.0.0.1:9995:9995/tcp"
