@@ -400,7 +400,7 @@ async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap
 }
 
 fn build_openmetrics_content(upses: &UpsVarMap) -> String {
-    let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| (m.to_string(), Vec::new())).collect();
+    let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
 
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
