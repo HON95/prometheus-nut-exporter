@@ -33,10 +33,9 @@ jobs:
     - name: Push to GitHub Packages
       uses: docker/build-push-action@v1
       with:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        registry: docker.pkg.github.com
-        repository: hon95/prometheus-nut-exporter/app
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: hon95/prometheus-nut-exporter
         tags: "bleeding"
   publish-stable:
     if: github.event_name == 'release' && github.event.action == 'published'
@@ -48,9 +47,8 @@ jobs:
     - name: Push to GitHub Packages
       uses: docker/build-push-action@v1
       with:
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        registry: docker.pkg.github.com
-        repository: hon95/prometheus-nut-exporter/app
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: hon95/prometheus-nut-exporter
         tags: "stable"
         tag_semver: true
