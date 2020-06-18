@@ -2,4 +2,4 @@
 
 set -eu
 
-cargo clippy
+cargo clippy -- -D warnings
