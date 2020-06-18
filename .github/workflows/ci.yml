@@ -10,7 +10,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  IMAGE: HON95/prometheus-nut-exporter/app
 
 jobs:
   check:
@@ -37,5 +36,5 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: docker.pkg.github.com
-        repository: "$IMAGE"
+        repository: hon95/prometheus-nut-exporter
         tag_with_ref: true
