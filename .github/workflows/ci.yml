@@ -2,12 +2,15 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: ["*"]
   pull_request:
-    branches: [master]
+    branches: ["*"]
+  release:
+    types: [published]
 
 env:
   CARGO_TERM_COLOR: always
+  IMAGE: HON95/prometheus-nut-exporter
 
 jobs:
   check:
@@ -21,3 +24,18 @@ jobs:
       run: cargo build --verbose
     - name: Check
       run: cargo clippy -- -D warnings
+  publish:
+    if: github.event_name == "release" && github.event.action == "published"
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Push to GitHub Packages
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: docker.pkg.github.com
+        repository: "$IMAGE"
+        tag_with_ref: true
