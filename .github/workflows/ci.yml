@@ -10,7 +10,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  IMAGE: HON95/prometheus-nut-exporter
+  IMAGE: HON95/prometheus-nut-exporter/app
 
 jobs:
   check:
