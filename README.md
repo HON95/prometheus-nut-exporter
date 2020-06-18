@@ -1,6 +1,6 @@
 # Prometheus NUT Exporter
 
-**TODO** Badges
+![Rust](https://github.com/HON95/prometheus-nut-exporter/workflows/Rust/badge.svg?branch=master)
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 

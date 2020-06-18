@@ -2,4 +2,4 @@
 
 set -eu
 
-cargo update
+cargo clippy
