@@ -4,7 +4,7 @@ Copied from the source code.
 
 | Metric | NUT var | Description | Unit |
 | - | - | - | - |
-| `nut_ups_info` | `` | Metadata about the UPS, including NUT description, device model, battery type and driver. | |
+| `nut_ups_info` | | Metadata about the UPS, including NUT description, device model, battery type and driver. | |
 | `nut_battery_charge` | `battery.charge` | Battery level. (0-1) |  |
 | `nut_battery_runtime_seconds` | `battery.runtime` | Seconds until battery runs out. | `s` |
 | `nut_battery_volts` | `battery.voltage` | Battery voltage. | `V` |

@@ -263,12 +263,14 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
     let mut status = StatusCode::OK;
 
     if !target.is_empty() {
-        let result_res = scrape_nut(target).await;
-        if let Ok(result) = result_res {
-            content.push_str(&result);
-        } else if let Err(error) = result_res {
-            content.push_str(&error);
-            status = StatusCode::SERVICE_UNAVAILABLE;
+        match scrape_nut(target).await {
+            Ok(result) => {
+                content.push_str(&result);
+            },
+            Err(error) => {
+                content.push_str(&error);
+                status = StatusCode::SERVICE_UNAVAILABLE;
+            },
         }
     } else {
         content.push_str(&format!("Missing target.\n\nUsage: {}?target=<target>\n", config.http_path));
