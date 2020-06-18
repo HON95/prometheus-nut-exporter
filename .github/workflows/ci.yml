@@ -25,7 +25,7 @@ jobs:
     - name: Check
       run: cargo clippy -- -D warnings
   publish:
-    if: github.event_name == "release" && github.event.action == "published"
+    if: github.event_name == 'release' && github.event.action == 'published'
     needs: check
     runs-on: ubuntu-latest
     steps:
