@@ -15,4 +15,4 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         # NUT exporter
-        replacement: nut-exporter:9999
+        replacement: nut-exporter:9995

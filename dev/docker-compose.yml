@@ -11,10 +11,10 @@ services:
     environment:
       - TZ=Europe/Oslo
       - RUST_BACKTRACE=1
-      - HTTP_PORT=9999
+      - HTTP_PORT=9995
       - LOG_REQUESTS_CONSOLE=true
     ports:
-      - "127.0.0.1:9999:9999/tcp"
+      - "127.0.0.1:9995:9995/tcp"
 
   prometheus:
     image: prom/prometheus:latest

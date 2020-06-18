@@ -22,7 +22,7 @@ struct Config {
 }
 
 impl Config {
-    const DEFAULT_HTTP_PORT: u16 = 9999;
+    const DEFAULT_HTTP_PORT: u16 = 9995;
     const DEFAULT_HTTP_PATH: &'static str = "/nut";
     const DEFAULT_LOG_REQUESTS_CONSOLE: bool = false;
 }

@@ -36,5 +36,5 @@ COPY --from=builder /build/target/release/$BINARY ./
 RUN chown app:app $BINARY
 
 USER app
-EXPOSE 9999/tcp
+EXPOSE 9995/tcp
 ENTRYPOINT ./$BINARY
