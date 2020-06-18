@@ -2,23 +2,22 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Install dependencies
+      run: rustup component add clippy
     - name: Build
       run: cargo build --verbose
-    - name: Install Clippy
-      run: rustup component add clippy
-    - name: Run Clippy
+    - name: Check
       run: cargo clippy -- -D warnings
