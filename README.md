@@ -1,6 +1,8 @@
 # Prometheus NUT Exporter
 
-![Rust](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)
+[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/HON95/prometheus-nut-exporter?label=Version)](https://github.com/HON95/prometheus-nut-exporter/releases)
+[![Rust](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)](https://github.com/HON95/prometheus-nut-exporter/actions?query=workflow%3ACI)
+[![Docker Pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/repository/docker/hon95/prometheus-nut-exporter)
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
@@ -8,7 +10,7 @@ A Prometheus exporter for uninterruptable power supplies (UPSes) using Network U
 
 ### NUT
 
-Set up NUT in server mode and make sure the port (3493 by default) is accessible.
+Set up NUT in server mode and make sure the TCP port (3493 by default) is accessible.
 
 ### Docker
 

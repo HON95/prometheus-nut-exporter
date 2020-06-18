@@ -51,4 +51,4 @@ jobs:
         password: ${{ secrets.DOCKER_PASSWORD }}
         repository: hon95/prometheus-nut-exporter
         tags: "stable"
-        tag_semver: true
+        tag_with_ref: true
