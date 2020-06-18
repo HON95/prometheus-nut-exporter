@@ -23,7 +23,22 @@ jobs:
       run: cargo build --verbose
     - name: Check
       run: cargo clippy -- -D warnings
-  publish:
+  publish-bleeding:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Push to GitHub Packages
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: docker.pkg.github.com
+        repository: hon95/prometheus-nut-exporter/app
+        tags: "bleeding"
+  publish-stable:
     if: github.event_name == 'release' && github.event.action == 'published'
     needs: check
     runs-on: ubuntu-latest
@@ -36,5 +51,6 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
         registry: docker.pkg.github.com
-        repository: hon95/prometheus-nut-exporter
-        tag_with_ref: true
+        repository: hon95/prometheus-nut-exporter/app
+        tags: "stable"
+        tag_semver: true
