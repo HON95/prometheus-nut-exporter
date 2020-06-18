@@ -30,7 +30,7 @@ impl Config {
 type VarMap = HashMap<String, String>;
 type UpsVarMap = HashMap<String, VarMap>;
 
-const UPS_DESCRIPTION_PSEUDOVAR: &'static str = "description";
+const UPS_DESCRIPTION_PSEUDOVAR: &str = "description";
 
 #[derive(Debug, Copy, Clone)]
 enum VarTransform {
@@ -178,7 +178,7 @@ fn read_config() -> Config {
         }
     }
     if let Ok(http_path) = env::var("HTTP_PATH") {
-        if http_path.starts_with("/") {
+        if http_path.starts_with('/') {
             config.http_path = http_path;
         }
     }
@@ -218,7 +218,7 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
     let query_args: HashMap<String, String> = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes()).into_owned().collect();
 
     let metrics_path = &config.http_path;
-    let is_method_get = request.method() == &Method::GET;
+    let is_method_get = request.method() == Method::GET;
     let path = request.uri().path();
     let response_res: Result<Response<Body>, Infallible>;
     if path == "/" {
@@ -262,7 +262,7 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
     let mut content = String::new();
     let mut status = StatusCode::OK;
 
-    if target.len() > 0 {
+    if !target.is_empty() {
         let result_res = scrape_nut(target).await;
         if let Ok(result) = result_res {
             content.push_str(&result);
@@ -429,7 +429,7 @@ fn build_openmetrics_content(upses: &UpsVarMap) -> String {
 
 fn print_metric_info(metric: &Metric) -> String {
     let mut builder: String = String::new();
-    if metric.nut_var.len() > 0 {
+    if !metric.nut_var.is_empty() {
         builder.push_str(&format!("# HELP {} {} (\"{}\")\n", metric.metric, metric.help, metric.nut_var));
     } else {
         builder.push_str(&format!("# HELP {} {}\n", metric.metric, metric.help));
@@ -478,7 +478,7 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
         },
         VarTransform::UpsStatus => {
             // Remove stuff we don't care about
-            let value_start = value.splitn(2, " ").next().unwrap();
+            let value_start = value.splitn(2, ' ').next().unwrap();
             result_value = match value_start {
                 "OL" => 1f64,
                 "OB" => 2f64,
