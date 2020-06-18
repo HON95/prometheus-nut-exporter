@@ -3,9 +3,7 @@
 version: "3.7"
 
 services:
-  app:
-    container_name: prometheus-nut-exporter_dev
-    #image: prometheus-nut-exporter:dev
+  nut-exporter:
     build:
       context: ..
       args:
@@ -17,3 +15,13 @@ services:
       - LOG_REQUESTS_CONSOLE=true
     ports:
       - "127.0.0.1:9999:9999/tcp"
+
+  prometheus:
+    image: prom/prometheus:latest
+    environment:
+      - TZ=Europe/Oslo
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../.local/prometheus_data/:/prometheus/:rw
+    ports:
+      - "127.0.0.1:9090:9090/tcp"

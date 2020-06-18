@@ -27,24 +27,137 @@ impl Config {
     const DEFAULT_LOG_REQUESTS_CONSOLE: bool = false;
 }
 
-#[derive(Debug, Clone)]
-struct UpsVar {
-    ups: String,
-    variable: String,
-    value: String,
-}
+type VarMap = HashMap<String, String>;
+type UpsVarMap = HashMap<String, VarMap>;
 
 const UPS_DESCRIPTION_PSEUDOVAR: &'static str = "description";
 
-/*
- * TODO
- * OpenMetrics /metrics endpoint
- * Check if unabailable, tmp and perm. Wrt. alerting.
- * Mirror SNMP exporter: "?target=..."
- * Authentication.
- * Options as CLI args.
- * Pass config to handler.
- */
+#[derive(Debug, Copy, Clone)]
+enum VarTransform {
+    None,
+    Percent,
+    BeeperStatus,
+    UpsStatus,
+}
+
+#[derive(Debug, Clone)]
+struct Metric {
+    metric: &'static str,
+    help: &'static str,
+    type_: &'static str,
+    unit: &'static str,
+    nut_var: &'static str,
+    var_transform: VarTransform,
+}
+
+const INFO_METRIC: Metric = Metric {
+    metric: "nut_ups_info",
+    help: "Metadata about the UPS.",
+    type_: "counter",
+    unit: "",
+    nut_var: "",
+    var_transform: VarTransform::None,
+};
+
+static BASIC_METRICS: [Metric; 9] = [
+    Metric {
+        metric: "nut_battery_charge",
+        help: "Battery level. (0-1)",
+        type_: "gauge",
+        unit: "",
+        nut_var: "battery.charge",
+        var_transform: VarTransform::Percent,
+    },
+    Metric {
+        metric: "nut_battery_runtime_seconds",
+        help: "Seconds until battery runs out.",
+        type_: "gauge",
+        unit: "s",
+        nut_var: "battery.runtime",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_battery_volts",
+        help: "Battery voltage.",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "battery.voltage",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_input_volts",
+        help: "Input voltage.",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "input.voltage",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_output_volts",
+        help: "Output voltage.",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "output.voltage",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_beeper_status",
+        help: "If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3).",
+        type_: "gauge",
+        unit: "",
+        nut_var: "ups.beeper.status",
+        var_transform: VarTransform::BeeperStatus,
+    },
+    Metric {
+        metric: "nut_load",
+        help: "Load. (0-1)",
+        type_: "gauge",
+        unit: "",
+        nut_var: "ups.load",
+        var_transform: VarTransform::Percent,
+    },
+    Metric {
+        metric: "nut_realpower_nominal_watts",
+        help: "Nominal value of real power.",
+        type_: "gauge",
+        unit: "W",
+        nut_var: "ups.realpower.nominal",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_status",
+        help: "UPS status. \
+        Unknown (0), \
+        on line (OL) (1), \
+        on battery (OB) (2) or \
+        low battery (LB) (3).",
+        type_: "gauge",
+        unit: "W",
+        nut_var: "ups.status",
+        var_transform: VarTransform::UpsStatus,
+    },
+];
+
+lazy_static! {
+    // Containes all metrics, indexed by metric name
+    static ref METRICS: HashMap<&'static str, &'static Metric> = {
+        let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
+        map.insert(INFO_METRIC.metric, &INFO_METRIC);
+        for metric in BASIC_METRICS.iter() {
+            map.insert(metric.metric, &metric);
+        }
+        map
+    };
+
+    // Containes all metrics based on NUT vars, indexed by var
+    static ref VAR_METRICS: HashMap<&'static str, &'static Metric> = {
+        let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
+        for metric in BASIC_METRICS.iter() {
+            map.insert(metric.nut_var, &metric);
+        }
+        map
+    };
+}
 
 #[tokio::main]
 async fn main() {
@@ -143,13 +256,13 @@ fn endpoint_home(config: &Config) -> Result<Response<Body>, Infallible> {
 }
 
 async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>) -> Result<Response<Body>, Infallible> {
-    let target = query_args.get("target").map_or("", |s| s.as_str());
+    let empty_str = "".to_owned();
+    let target = query_args.get("target").unwrap_or(&empty_str);
 
     let mut content = String::new();
     let mut status = StatusCode::OK;
 
     if target.len() > 0 {
-        content.push_str(&format!("Metrics!\n\nTarget: {}\n", target));
         let result_res = scrape_nut(target).await;
         if let Ok(result) = result_res {
             content.push_str(&result);
@@ -195,39 +308,36 @@ fn log_request(config: &Config, request: &Request<Body>, remote_addr: &SocketAdd
  */
 
 async fn scrape_nut(target: &str) -> Result<String, String> {
-    // TODO connect, query UPSes, query vars for each UPS
-    // TODO transform vars to pretty metrics with HELP, TYPE, UNIT
-    // TODO build OpenMetrics content
+    let raw_stream = match TcpStream::connect(target).await {
+        Ok(val) => val,
+        Err(_) => return Err("Failed to connect to target.".to_owned()),
+    };
+    let mut stream = BufReader::new(raw_stream);
 
-    let raw_stream_res = TcpStream::connect(target).await;
-    if let Err(err) = raw_stream_res {
-        return Err("Failed to connect to target.".to_owned());
-    }
-    let mut stream = BufReader::new(raw_stream_res.unwrap());
+    let upses = match scrape_nut_upses(&mut stream).await {
+        Ok(val) => val,
+        Err(_) => return Err("Failed to communicate with target.".to_owned()),
+    };
 
-    let vars_res = scrape_nut_vars(&mut stream).await;
-    if let Err(err) = vars_res {
-        return Err("Failed to communicate with target.".to_owned());
-    }
-    let vars = vars_res.unwrap();
-
-    let content = build_openmetrics_content(vars);
+    let content = build_openmetrics_content(&upses);
 
     Ok(content)
 }
 
-async fn scrape_nut_vars(stream: &mut BufReader<TcpStream>) -> Result<Vec<UpsVar>, Error> {
+async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<UpsVarMap, Error> {
+    let mut upses: UpsVarMap = HashMap::new();
+    query_nut_upses(&mut stream, &mut upses).await?;
+    query_nut_vars(&mut stream, &mut upses).await?;
+
+    Ok(upses)
+}
+
+async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> Result<(), Error> {
     const RAW_UPS_PATTERN: &str = r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#;
-    const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
     lazy_static! {
         static ref UPS_PATTERN: Regex = Regex::new(RAW_UPS_PATTERN).unwrap();
-        static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
     }
 
-    let mut upses: Vec<String> = Vec::new();
-    let mut vars: Vec<UpsVar> = Vec::new();
-
-    // Query UPSes
     stream.write_all(b"LIST UPS\n").await?;
     while let Some(line) = stream.lines().next_line().await? {
         if line.starts_with("BEGIN") {
@@ -241,8 +351,9 @@ async fn scrape_nut_vars(stream: &mut BufReader<TcpStream>) -> Result<Vec<UpsVar
             Some(captures) => {
                 let ups = captures["ups"].to_owned();
                 let desc = captures["desc"].to_owned();
-                upses.push(ups.clone());
-                vars.push(UpsVar {ups: ups.clone(), variable: UPS_DESCRIPTION_PSEUDOVAR.to_owned(), value: desc.clone()});
+                let mut vars: VarMap = HashMap::new();
+                vars.insert(UPS_DESCRIPTION_PSEUDOVAR.to_owned(), desc.clone());
+                upses.insert(ups.clone(), vars);
             },
             None => {
                 continue;
@@ -250,10 +361,21 @@ async fn scrape_nut_vars(stream: &mut BufReader<TcpStream>) -> Result<Vec<UpsVar
         }
     }
 
-    // Query VARs
-    for ups in upses {
+    Ok(())
+}
+
+async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> Result<(), Error> {
+    const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
+    lazy_static! {
+        static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
+    }
+
+    for (ups, vars) in upses.iter_mut() {
         stream.write_all(format!("LIST VAR {}\n", ups).as_bytes()).await?;
         while let Some(line) = stream.lines().next_line().await? {
+            if line.starts_with("ERR") {
+                break;
+            }
             if line.starts_with("BEGIN") {
                 continue;
             }
@@ -263,10 +385,9 @@ async fn scrape_nut_vars(stream: &mut BufReader<TcpStream>) -> Result<Vec<UpsVar
             let captures_opt = VAR_PATTERN.captures(&line);
             match captures_opt {
                 Some(captures) => {
-                    let ups = captures["ups"].to_owned();
-                    let var = captures["var"].to_owned();
-                    let val = captures["val"].to_owned();
-                    vars.push(UpsVar {ups: ups, variable: var, value: val});
+                    let variable = captures["var"].to_owned();
+                    let value = captures["val"].to_owned();
+                    vars.insert(variable.clone(), value.clone());
                 },
                 None => {
                     continue;
@@ -275,15 +396,97 @@ async fn scrape_nut_vars(stream: &mut BufReader<TcpStream>) -> Result<Vec<UpsVar
         }
     }
 
-    Ok(vars)
+    Ok(())
 }
 
-fn build_openmetrics_content(vars: Vec<UpsVar>) -> String {
-    // TODO
+fn build_openmetrics_content(upses: &UpsVarMap) -> String {
+    let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| (m.to_string(), Vec::new())).collect();
 
-    let mut content: String = String::new();
-    for var in vars {
-        content.push_str(&format!("{} {} \"{}\"\n", var.ups, var.variable, var.value));
+    // Generate metric lines for all vars for all UPSes
+    for (ups, vars) in upses.iter() {
+        let info_line = print_ups_info_metric(&ups, &vars);
+        metric_lines.get_mut(INFO_METRIC.metric).unwrap().push(info_line);
+        for (var, val) in vars.iter() {
+            if let Some(metric) = VAR_METRICS.get(var.as_str()) {
+                if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
+                    metric_lines.get_mut(metric.metric).unwrap().push(var_line);
+                }
+            }
+        }
     }
-    content
+
+    // Print metric info and then all dimensions together
+    let mut builder: String = String::new();
+    for metric in METRICS.values() {
+        if let Some(lines) = metric_lines.get(metric.metric) {
+            builder.push_str(&print_metric_info(&metric));
+            builder.push_str(&lines.concat());
+        }
+    }
+
+    builder
+}
+
+fn print_metric_info(metric: &Metric) -> String {
+    let mut builder: String = String::new();
+    if metric.nut_var.len() > 0 {
+        builder.push_str(&format!("# HELP {} {} (\"{}\")\n", metric.metric, metric.help, metric.nut_var));
+    } else {
+        builder.push_str(&format!("# HELP {} {}\n", metric.metric, metric.help));
+    }
+    builder.push_str(&format!("# TYPE {} {}\n", metric.metric, metric.type_));
+    builder.push_str(&format!("# UNIT {} {}\n", metric.metric, metric.unit));
+    builder
+}
+
+fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
+    let metric = INFO_METRIC;
+    let empty_str = "".to_owned();
+    let battery_type = vars.get("battery.type").unwrap_or(&empty_str);
+    let device_model = vars.get("device.model").unwrap_or(&empty_str);
+    let driver = vars.get("driver.name").unwrap_or(&empty_str);
+    
+    format!(
+        "{metric}{{ups=\"{ups}\",battery_type=\"{battery_type}\"device_model=\"{device_model}\"driver=\"{driver}\"}} 1\n",
+        metric=metric.metric, ups=ups, battery_type=battery_type, device_model=device_model, driver=driver
+    )
+}
+
+fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {
+    let result_value: f64;
+    match metric.var_transform {
+        VarTransform::None => {
+            result_value = match value.parse::<f64>() {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+        },
+        VarTransform::Percent => {
+            let num_value = match value.parse::<f64>() {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+            result_value = num_value / 100f64;
+        },
+        VarTransform::BeeperStatus => {
+            result_value = match value {
+                "enabled" => 1f64,
+                "disabled" => 2f64,
+                "muted" => 3f64,
+                _ => 0f64,
+            };
+        },
+        VarTransform::UpsStatus => {
+            // Remove stuff we don't care about
+            let value_start = value.splitn(2, " ").next().unwrap();
+            result_value = match value_start {
+                "OL" => 1f64,
+                "OB" => 2f64,
+                "LB" => 3f64,
+                _ => 0f64,
+            };
+        },
+    }
+
+    Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=ups, value=result_value))
 }
