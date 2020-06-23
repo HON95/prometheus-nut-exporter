@@ -1,9 +1,9 @@
 # Prometheus NUT Exporter
 
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/HON95/prometheus-nut-exporter?label=Version)](https://github.com/HON95/prometheus-nut-exporter/releases)
-[![Rust](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)](https://github.com/HON95/prometheus-nut-exporter/actions?query=workflow%3ACI)
-[![Docker Pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/repository/docker/hon95/prometheus-nut-exporter)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter?ref=badge_shield)
+[![GitHub release](https://img.shields.io/github/v/release/HON95/prometheus-nut-exporter?label=Version)](https://github.com/HON95/prometheus-nut-exporter/releases)
+[![CI](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)](https://github.com/HON95/prometheus-nut-exporter/actions?query=workflow%3ACI)
+[![FOSSA status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter?ref=badge_shield)
+[![Docker pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/repository/docker/hon95/prometheus-nut-exporter)
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
@@ -30,7 +30,7 @@ services:
       - HTTP_PATH=/nut
       - LOG_REQUESTS_CONSOLE=false
     ports:
-      - "127.0.0.1:9995:9995/tcp"
+      - "9995:9995/tcp"
 ```
 
 ### Prometheus
