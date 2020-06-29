@@ -35,7 +35,7 @@ jobs:
     - name: Write version to file
       run: echo "0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ")" > VERSION
       shell: bash
-    - name: Push to GitHub Packages
+    - name: Push to Docker Hub
       uses: docker/build-push-action@v1
       with:
         username: ${{secrets.DOCKER_USERNAME}}
@@ -52,7 +52,7 @@ jobs:
     - name: Write version to file
       run: echo "${GITHUB_REF#refs/tags/v}" > VERSION
       shell: bash
-    - name: Push to GitHub Packages
+    - name: Push to Docker Hub
       uses: docker/build-push-action@v1
       with:
         username: ${{secrets.DOCKER_USERNAME}}
