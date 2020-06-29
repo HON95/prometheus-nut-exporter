@@ -18,13 +18,13 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Install dependencies
-      run: rustup component add clippy
+      run: "rustup component add clippy"
     - name: Build
-      run: cargo build --verbose
+      run: "cargo build --verbose"
     - name: Run Clippy
-      run: cargo clippy -- -D warnings
+      run: "cargo clippy -- -D warnings"
     - name: Check for trailing whitespace
-      run: ! egrep -RHn "\s+$" src/
+      run: "! egrep -RHn '\s+$' src/"
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: check
@@ -33,7 +33,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Write version to file
-      run: echo "0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ")" > VERSION
+      run: "echo "0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ")" > VERSION"
       shell: bash
     - name: Push to GitHub Packages
       uses: docker/build-push-action@v1
@@ -50,7 +50,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Write version to file
-      run: echo "${GITHUB_REF#refs/tags/v}" > VERSION
+      run: "echo "${GITHUB_REF#refs/tags/v}" > VERSION"
       shell: bash
     - name: Push to GitHub Packages
       uses: docker/build-push-action@v1
