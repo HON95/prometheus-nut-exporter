@@ -375,7 +375,7 @@ dependencies = [
 
 [[package]]
 name = "prometheus-nut-exporter"
-version = "1.0.0-SNAPSHOT"
+version = "0.0.0"
 dependencies = [
  "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "hyper 0.13.6 (registry+https://github.com/rust-lang/crates.io-index)",

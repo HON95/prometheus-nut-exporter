@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Added metadata metrics `nut_info` for the NUT server and `nut_exporter_info` for the exporter.
 
+### Changed
+
+- Improved error messages sent to client.
+
 ### Fixed
 
 - Fixed malformed labels for `nut_ups_info`.

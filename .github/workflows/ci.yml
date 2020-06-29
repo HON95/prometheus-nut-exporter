@@ -21,8 +21,10 @@ jobs:
       run: rustup component add clippy
     - name: Build
       run: cargo build --verbose
-    - name: Check
+    - name: Run Clippy
       run: cargo clippy -- -D warnings
+    - name: Check for trailing whitespace
+      run: ! egrep -RHn "\s+$" src/
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: check

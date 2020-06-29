@@ -2,7 +2,7 @@
 
 set -eu
 
-DC="docker-compose -f dev/docker-compose.yml"
+DC="docker-compose -f manage/docker-compose.yml"
 
 echo "Downing DC resources ..."
 $DC down
