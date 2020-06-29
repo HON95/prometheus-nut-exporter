@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added metadata metrics `nut_nfo` for the NUT server and `nut_exporter_info` for the exporter.
+
 ### Changed
 
 ### Deprecated
@@ -16,6 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed malformed labels for `nut_ups_info`.
+
 ### Security
 
+## [1.0.1] - 2020-06-29
+
+### Added
+
+- Added metadata metrics `nut_info` for the NUT server and `nut_exporter_info` for the exporter.
+
+### Fixed
+
+- Fixed malformed labels for `nut_ups_info`.
+
 ## [1.0.0] - 2020-06-18
+
+Initial release.

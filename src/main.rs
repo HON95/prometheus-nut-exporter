@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::env;
+use std::fs;
 use std::io::Error;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 
@@ -16,19 +17,24 @@ use url::form_urlencoded;
 
 #[derive(Debug, Clone)]
 struct Config {
+    version: String,
     http_port: u16,
     http_path: String,
     log_requests_console: bool,
 }
 
 impl Config {
+    const DEFAULT_VERSION: &'static str = "0.0.0";
     const DEFAULT_HTTP_PORT: u16 = 9995;
     const DEFAULT_HTTP_PATH: &'static str = "/nut";
     const DEFAULT_LOG_REQUESTS_CONSOLE: bool = false;
 }
 
+const VERSION_FILE: &str = "VERSION";
+
 type VarMap = HashMap<String, String>;
 type UpsVarMap = HashMap<String, VarMap>;
+type NutVersion = String;
 
 const UPS_DESCRIPTION_PSEUDOVAR: &str = "description";
 
@@ -50,10 +56,28 @@ struct Metric {
     var_transform: VarTransform,
 }
 
-const INFO_METRIC: Metric = Metric {
+const EXPORTER_INFO_METRIC: Metric = Metric {
+    metric: "nut_exporter_info",
+    help: "Metadata about the exporter.",
+    type_: "gauge",
+    unit: "",
+    nut_var: "",
+    var_transform: VarTransform::None,
+};
+
+const NUT_INFO_METRIC: Metric = Metric {
+    metric: "nut_info",
+    help: "Metadata about the NUT server.",
+    type_: "gauge",
+    unit: "",
+    nut_var: "",
+    var_transform: VarTransform::None,
+};
+
+const UPS_INFO_METRIC: Metric = Metric {
     metric: "nut_ups_info",
     help: "Metadata about the UPS.",
-    type_: "counter",
+    type_: "gauge",
     unit: "",
     nut_var: "",
     var_transform: VarTransform::None,
@@ -142,7 +166,9 @@ lazy_static! {
     // Containes all metrics, indexed by metric name
     static ref METRICS: HashMap<&'static str, &'static Metric> = {
         let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
-        map.insert(INFO_METRIC.metric, &INFO_METRIC);
+        map.insert(EXPORTER_INFO_METRIC.metric, &EXPORTER_INFO_METRIC);
+        map.insert(NUT_INFO_METRIC.metric, &NUT_INFO_METRIC);
+        map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
         for metric in BASIC_METRICS.iter() {
             map.insert(metric.metric, &metric);
         }
@@ -167,10 +193,13 @@ async fn main() {
 
 fn read_config() -> Config {
     let mut config = Config {
+        version: Config::DEFAULT_VERSION.to_owned(),
         http_port: Config::DEFAULT_HTTP_PORT,
         http_path: Config::DEFAULT_HTTP_PATH.to_owned(),
         log_requests_console: Config::DEFAULT_LOG_REQUESTS_CONSOLE,
     };
+
+    read_version_file(&mut config);
 
     if let Ok(http_port_str) = env::var("HTTP_PORT") {
         if let Ok(http_port) = http_port_str.parse::<u16>() {
@@ -189,6 +218,19 @@ fn read_config() -> Config {
     }
 
     config
+}
+
+fn read_version_file(config: &mut Config) {
+    let content_res = fs::read_to_string(VERSION_FILE);
+    match content_res {
+        Ok(content) => {
+            config.version = content.trim().to_owned();
+            println!("Version: {}", config.version);
+        },
+        Err(error) => {
+            eprintln!("Failed to read version file: {}", error);
+        },
+    };
 }
 
 /*
@@ -263,7 +305,7 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
     let mut status = StatusCode::OK;
 
     if !target.is_empty() {
-        match scrape_nut(target).await {
+        match scrape_nut(&config, target).await {
             Ok(result) => {
                 content.push_str(&result);
             },
@@ -309,29 +351,52 @@ fn log_request(config: &Config, request: &Request<Body>, remote_addr: &SocketAdd
  * NUT client stuff
  */
 
-async fn scrape_nut(target: &str) -> Result<String, String> {
+async fn scrape_nut(config: &Config, target: &str) -> Result<String, String> {
     let raw_stream = match TcpStream::connect(target).await {
         Ok(val) => val,
         Err(_) => return Err("Failed to connect to target.".to_owned()),
     };
     let mut stream = BufReader::new(raw_stream);
 
-    let upses = match scrape_nut_upses(&mut stream).await {
+    let (upses, nut_version) = match scrape_nut_upses(&mut stream).await {
         Ok(val) => val,
         Err(_) => return Err("Failed to communicate with target.".to_owned()),
     };
 
-    let content = build_openmetrics_content(&upses);
+    let content = build_openmetrics_content(&config, &upses, &nut_version);
 
     Ok(content)
 }
 
-async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<UpsVarMap, Error> {
+async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Error> {
     let mut upses: UpsVarMap = HashMap::new();
+    let mut nut_version: NutVersion = "".to_owned();
+    query_nut_version(&mut stream, &mut nut_version).await?;
     query_nut_upses(&mut stream, &mut upses).await?;
     query_nut_vars(&mut stream, &mut upses).await?;
 
-    Ok(upses)
+    Ok((upses, nut_version))
+}
+
+async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> Result<(), Error> {
+    const RAW_VERSION_PATTERN: &str = r#"(?P<version>\d+\.\d+\.\d+)"#;
+    lazy_static! {
+        static ref VERSION_PATTERN: Regex = Regex::new(RAW_VERSION_PATTERN).unwrap();
+    }
+
+    stream.write_all(b"VER\n").await?;
+    if let Some(line) = stream.lines().next_line().await? {
+        let captures_opt = VERSION_PATTERN.captures(&line);
+        match captures_opt {
+            Some(captures) => {
+                *nut_version = captures["version"].to_owned();
+            },
+            None => {
+            },
+        }
+    }
+
+    Ok(())
 }
 
 async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> Result<(), Error> {
@@ -358,7 +423,6 @@ async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMa
                 upses.insert(ups.clone(), vars);
             },
             None => {
-                continue;
             },
         }
     }
@@ -401,13 +465,23 @@ async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap
     Ok(())
 }
 
-fn build_openmetrics_content(upses: &UpsVarMap) -> String {
+fn build_openmetrics_content(config: &Config, upses: &UpsVarMap, nut_version: &NutVersion) -> String {
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
+
+    // Exporter metadata
+    let exporter_info_line = print_exporter_info_metric(config);
+    metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(exporter_info_line);
+
+    // NUT metadata
+    let nut_info_line = print_nut_info_metric(nut_version);
+    metric_lines.get_mut(NUT_INFO_METRIC.metric).unwrap().push(nut_info_line);
 
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
-        let info_line = print_ups_info_metric(&ups, &vars);
-        metric_lines.get_mut(INFO_METRIC.metric).unwrap().push(info_line);
+        // UPS metadata
+        let ups_info_line = print_ups_info_metric(&ups, &vars);
+        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(ups_info_line);
+        // UPS vars
         for (var, val) in vars.iter() {
             if let Some(metric) = VAR_METRICS.get(var.as_str()) {
                 if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
@@ -441,15 +515,25 @@ fn print_metric_info(metric: &Metric) -> String {
     builder
 }
 
+fn print_exporter_info_metric(config: &Config) -> String {
+    let metric = EXPORTER_INFO_METRIC;
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=config.version)
+}
+
+fn print_nut_info_metric(nut_version: &NutVersion) -> String {
+    let metric = NUT_INFO_METRIC;
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=nut_version)
+}
+
 fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
-    let metric = INFO_METRIC;
+    let metric = UPS_INFO_METRIC;
     let empty_str = "".to_owned();
     let battery_type = vars.get("battery.type").unwrap_or(&empty_str);
     let device_model = vars.get("device.model").unwrap_or(&empty_str);
     let driver = vars.get("driver.name").unwrap_or(&empty_str);
     
     format!(
-        "{metric}{{ups=\"{ups}\",battery_type=\"{battery_type}\"device_model=\"{device_model}\"driver=\"{driver}\"}} 1\n",
+        "{metric}{{ups=\"{ups}\",battery_type=\"{battery_type}\",device_model=\"{device_model}\",driver=\"{driver}\"}} 1\n",
         metric=metric.metric, ups=ups, battery_type=battery_type, device_model=device_model, driver=driver
     )
 }

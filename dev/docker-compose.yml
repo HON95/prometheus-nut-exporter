@@ -17,12 +17,12 @@ services:
     ports:
       - "127.0.0.1:9995:9995/tcp"
 
-  prometheus:
-    image: prom/prometheus:latest
-    environment:
-      - TZ=Europe/Oslo
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ../.local/prometheus_data/:/prometheus/:rw
-    ports:
-      - "127.0.0.1:9090:9090/tcp"
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   environment:
+  #     - TZ=Europe/Oslo
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - ../.local/prometheus_data/:/prometheus/:rw
+  #   ports:
+  #     - "127.0.0.1:9090:9090/tcp"

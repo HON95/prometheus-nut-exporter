@@ -32,6 +32,8 @@ WORKDIR /app
 
 RUN useradd --uid $APP_UID app
 
+COPY VERSION ./
+
 COPY --from=builder /build/target/release/$BINARY ./
 RUN chown app:app $BINARY
 

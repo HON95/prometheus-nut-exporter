@@ -3,7 +3,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/HON95/prometheus-nut-exporter?label=Version)](https://github.com/HON95/prometheus-nut-exporter/releases)
 [![CI](https://github.com/HON95/prometheus-nut-exporter/workflows/CI/badge.svg?branch=master)](https://github.com/HON95/prometheus-nut-exporter/actions?query=workflow%3ACI)
 [![FOSSA status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FHON95%2Fprometheus-nut-exporter?ref=badge_shield)
-[![Docker pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/repository/docker/hon95/prometheus-nut-exporter)
+[![Docker pulls](https://img.shields.io/docker/pulls/hon95/prometheus-nut-exporter?label=Docker%20Hub)](https://hub.docker.com/r/hon95/prometheus-nut-exporter)
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
@@ -69,7 +69,6 @@ I only have a few PowerWalker UPSes to test with, so I've only added matrics for
 - [NUT: GENERICUPS(8)](https://networkupstools.org/docs/man/genericups.html)
 - [NUT Developer Guide: 9. Network protocol information](https://networkupstools.org/docs/developer-guide.chunked/ar01s09.html)
 - [NUT Developer Guide: A.1. Variables](https://networkupstools.org/docs/developer-guide.chunked/apas01.html)
-- [Prometheus: Writing exporters](https://prometheus.io/docs/instrumenting/writing_exporters/)
 
 ## License
 

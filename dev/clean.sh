@@ -17,4 +17,4 @@ rm -rf .target/
 
 echo
 echo "Deleting local data ..."
-rm -rf .local/
+sudo rm -rf .local/

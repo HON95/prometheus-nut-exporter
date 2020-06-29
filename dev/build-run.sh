@@ -2,8 +2,6 @@
 
 set -eu
 
-DC="docker-compose -f dev/docker-compose.yml"
+dev/build.sh
 
-$DC build
-
-$DC up
+dev/run.sh
