@@ -1,0 +1,119 @@
+use std::collections::HashMap;
+
+use crate::common::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
+use crate::config::Config;
+
+pub fn build_openmetrics_content(config: &Config, upses: &UpsVarMap, nut_version: &str) -> String {
+    let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
+
+    // Exporter metadata
+    let exporter_info_line = print_exporter_info_metric(config);
+    metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(exporter_info_line);
+
+    // NUT metadata
+    let nut_info_line = print_nut_info_metric(nut_version);
+    metric_lines.get_mut(NUT_INFO_METRIC.metric).unwrap().push(nut_info_line);
+
+    // Generate metric lines for all vars for all UPSes
+    for (ups, vars) in upses.iter() {
+        // UPS metadata
+        let ups_info_line = print_ups_info_metric(&ups, &vars);
+        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(ups_info_line);
+        // UPS vars
+        for (var, val) in vars.iter() {
+            if let Some(metric) = VAR_METRICS.get(var.as_str()) {
+                if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
+                    metric_lines.get_mut(metric.metric).unwrap().push(var_line);
+                }
+            }
+        }
+    }
+
+    // Print metric info and then all dimensions together
+    let mut builder: String = String::new();
+    for metric in METRICS.values() {
+        if let Some(lines) = metric_lines.get(metric.metric) {
+            builder.push_str(&print_metric_info(&metric));
+            builder.push_str(&lines.concat());
+        }
+    }
+
+    builder
+}
+
+fn print_metric_info(metric: &Metric) -> String {
+    let mut builder: String = String::new();
+    if !metric.nut_var.is_empty() {
+        builder.push_str(&format!("# HELP {} {} (\"{}\")\n", metric.metric, metric.help, metric.nut_var));
+    } else {
+        builder.push_str(&format!("# HELP {} {}\n", metric.metric, metric.help));
+    }
+    builder.push_str(&format!("# TYPE {} {}\n", metric.metric, metric.type_));
+    builder.push_str(&format!("# UNIT {} {}\n", metric.metric, metric.unit));
+
+    builder
+}
+
+fn print_exporter_info_metric(config: &Config) -> String {
+    let metric = EXPORTER_INFO_METRIC;
+
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=config.version)
+}
+
+fn print_nut_info_metric(nut_version: &str) -> String {
+    let metric = NUT_INFO_METRIC;
+
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=nut_version)
+}
+
+fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
+    let metric = UPS_INFO_METRIC;
+    let empty_str = "".to_owned();
+    let battery_type = vars.get("battery.type").unwrap_or(&empty_str);
+    let device_model = vars.get("device.model").unwrap_or(&empty_str);
+    let driver = vars.get("driver.name").unwrap_or(&empty_str);
+
+    format!(
+        "{metric}{{ups=\"{ups}\",battery_type=\"{battery_type}\",device_model=\"{device_model}\",driver=\"{driver}\"}} 1\n",
+        metric=metric.metric, ups=ups, battery_type=battery_type, device_model=device_model, driver=driver
+    )
+}
+
+fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {
+    let result_value: f64;
+    match metric.var_transform {
+        VarTransform::None => {
+            result_value = match value.parse::<f64>() {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+        },
+        VarTransform::Percent => {
+            let num_value = match value.parse::<f64>() {
+                Ok(val) => val,
+                Err(_) => return None,
+            };
+            result_value = num_value / 100f64;
+        },
+        VarTransform::BeeperStatus => {
+            result_value = match value {
+                "enabled" => 1f64,
+                "disabled" => 2f64,
+                "muted" => 3f64,
+                _ => 0f64,
+            };
+        },
+        VarTransform::UpsStatus => {
+            // Remove stuff we don't care about
+            let value_start = value.splitn(2, ' ').next().unwrap();
+            result_value = match value_start {
+                "OL" => 1f64,
+                "OB" => 2f64,
+                "LB" => 3f64,
+                _ => 0f64,
+            };
+        },
+    }
+
+    Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=ups, value=result_value))
+}
