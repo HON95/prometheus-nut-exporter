@@ -60,4 +60,4 @@ jobs:
         username: ${{secrets.DOCKER_USERNAME}}
         password: ${{secrets.DOCKER_PASSWORD}}
         repository: hon95/prometheus-nut-exporter
-        tags: stable, ${{VERSION}}
+        tags: stable, ${{env.VERSION}}
