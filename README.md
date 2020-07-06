@@ -62,7 +62,9 @@ scrape_configs:
 
 See [metrics](metrics.md).
 
-I only have a few PowerWalker UPSes to test with, so I've only added matrics for useful variables for those. If you want more metrics/vars, you're welcome to request it or implement it yourself.
+To check if a specific UPS is unavailable, use something like: `absent(nut_status{job="...", ups="..."})`
+
+I only have a few PowerWalker UPSes to test with, so I've only added metrics for useful variables for those. If you want more metrics/vars, you're welcome to request it or implement it yourself.
 
 ## References
 
