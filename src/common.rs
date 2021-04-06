@@ -239,7 +239,7 @@ pub static BASIC_METRICS: [Metric; 9] = [
         unit: "W",
         nut_var: "ups.status",
         var_transform: VarTransform::UpsStatus,
-    },
+    }
 ];
 
 lazy_static! {
