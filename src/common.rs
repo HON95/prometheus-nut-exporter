@@ -59,7 +59,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 9] = [
+pub static BASIC_METRICS: [Metric; 22] = [
     Metric {
         metric: "nut_battery_charge",
         help: "Battery level. (0-1)",
@@ -239,7 +239,7 @@ pub static BASIC_METRICS: [Metric; 9] = [
         unit: "W",
         nut_var: "ups.status",
         var_transform: VarTransform::UpsStatus,
-    }
+    },
 ];
 
 lazy_static! {
