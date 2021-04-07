@@ -10,9 +10,9 @@ repository = "https://github.com/HON95/prometheus-nut-exporter"
 edition = "2018"
 
 [dependencies]
-hyper = "0.13"
-tokio = { version = "0.2", features = ["full"] }
-chrono = "0.4.11"
-url = "2.1.1"
-regex = "1.3.9"
+hyper = { version = "0.14.5", features = ["full"] }
+tokio = { version = "1.4.0", features = ["full"] }
+chrono = "0.4.19"
+url = "2.2.1"
+regex = "1.4.5"
 lazy_static = "1.4.0"
