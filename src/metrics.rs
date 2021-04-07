@@ -54,7 +54,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
 };
 
 pub static BASIC_METRICS: [Metric; 36] = [
-    // Status
+    // Status, uptime, load
     Metric {
         metric: "nut_status",
         help: "UPS status. Unknown (0), on line (1, \"OL\"), on battery (2, \"OB\"), or low battery (3, \"LB\").",
@@ -71,7 +71,14 @@ pub static BASIC_METRICS: [Metric; 36] = [
         nut_var: "ups.beeper.status",
         var_transform: VarTransform::BeeperStatus,
     },
-    // Load, charge, runtime, uptime
+    Metric {
+        metric: "nut_uptime_seconds",
+        help: "Device uptime.",
+        type_: "gauge",
+        unit: "s",
+        nut_var: "device.uptime",
+        var_transform: VarTransform::None,
+    },
     Metric {
         metric: "nut_load",
         help: "Load. (0-1)",
@@ -80,6 +87,7 @@ pub static BASIC_METRICS: [Metric; 36] = [
         nut_var: "ups.load",
         var_transform: VarTransform::Percent,
     },
+    // Battery
     Metric {
         metric: "nut_battery_charge",
         help: "Battery level. (0-1)",
@@ -136,15 +144,6 @@ pub static BASIC_METRICS: [Metric; 36] = [
         nut_var: "battery.runtime.restart",
         var_transform: VarTransform::None,
     },
-    Metric {
-        metric: "nut_uptime_seconds",
-        help: "Device uptime.",
-        type_: "gauge",
-        unit: "s",
-        nut_var: "device.uptime",
-        var_transform: VarTransform::None,
-    },
-    // Battery
     Metric {
         metric: "nut_battery_voltage_volts",
         help: "Battery voltage.",
@@ -379,8 +378,15 @@ lazy_static! {
 pub fn print_metrics() {
     println!("| Metric | NUT Var | Unit | Description |");
     println!("| - | - | - | - |");
-    for metric in (*METRICS).values() {
+    let print_metric = |metric: &Metric| {
         let row = format!("| `{}` | `{}` | `{}` | {} |", metric.metric, metric.nut_var, metric.unit, metric.help).replace("``", "");
         println!("{}", row)
+    };
+
+    print_metric(&EXPORTER_INFO_METRIC);
+    print_metric(&NUT_INFO_METRIC);
+    print_metric(&UPS_INFO_METRIC);
+    for metric in BASIC_METRICS.iter() {
+        print_metric(metric);
     }
 }
