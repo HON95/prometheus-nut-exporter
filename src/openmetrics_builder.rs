@@ -33,8 +33,10 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     let mut builder: String = String::new();
     for metric in METRICS.values() {
         if let Some(lines) = metric_lines.get(metric.metric) {
-            builder.push_str(&print_metric_info(&metric));
-            builder.push_str(&lines.concat());
+            if !lines.is_empty() {
+                builder.push_str(&print_metric_info(&metric));
+                builder.push_str(&lines.concat());
+            }
         }
     }
 
@@ -69,15 +71,27 @@ fn print_nut_info_metric(nut_version: &str) -> String {
 fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
     let metric = UPS_INFO_METRIC;
     let empty_str = "".to_owned();
-    let description = vars.get(UPS_DESCRIPTION_PSEUDOVAR).unwrap_or(&empty_str);
-    let battery_type = vars.get("battery.type").unwrap_or(&empty_str);
-    let device_model = vars.get("device.model").unwrap_or(&empty_str);
-    let driver = vars.get("driver.name").unwrap_or(&empty_str);
 
-    format!(
-        "{metric}{{ups=\"{ups}\",description=\"{description}\",battery_type=\"{battery_type}\",device_model=\"{device_model}\",driver=\"{driver}\"}} 1\n",
-        metric=metric.metric, ups=ups, description=description, battery_type=battery_type, device_model=device_model, driver=driver
-    )
+    let mut attributes = HashMap::new();
+    attributes.insert("ups", ups);
+    attributes.insert("description", vars.get(UPS_DESCRIPTION_PSEUDOVAR).unwrap_or(&empty_str));
+    attributes.insert("description2", vars.get("device.description").unwrap_or(&empty_str));
+    attributes.insert("location", vars.get("device.location").unwrap_or(&empty_str));
+    attributes.insert("type", vars.get("device.type").unwrap_or(&empty_str));
+    attributes.insert("manufacturer", vars.get("device.mft").unwrap_or(&empty_str));
+    attributes.insert("model", vars.get("device.model").unwrap_or(&empty_str));
+    attributes.insert("battery_type", vars.get("battery.type").unwrap_or(&empty_str));
+    attributes.insert("driver", vars.get("driver.name").unwrap_or(&empty_str));
+
+    let mut labels = String::new();
+    for (key, value) in attributes {
+        if !labels.is_empty() {
+            labels.push(',');
+        }
+        labels.push_str(&format!("{}=\"{}\"", key, value));
+    }
+
+    format!("{}{{{}}} 1\n",metric.metric, labels)
 }
 
 fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {

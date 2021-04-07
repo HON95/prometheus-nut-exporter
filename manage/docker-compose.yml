@@ -14,6 +14,7 @@ services:
       - HTTP_PORT=9995
       - HTTP_PATH=/nut
       - LOG_REQUESTS_CONSOLE=true
+      - PRINT_METRICS_AND_EXIT=false
     # ports:
     #   - "127.0.0.1:9995:9995/tcp"
     network_mode: host
