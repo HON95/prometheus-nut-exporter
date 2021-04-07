@@ -15,6 +15,8 @@ enum NutQueryListState {
     Initial,
     Begun,
     Ended,
+    Malformed,
+    Error,
 }
 
 pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn Error>> {
@@ -91,7 +93,7 @@ async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsV
         Ok(())
     };
 
-    query_nut_list(&mut stream, "UPS", line_consumer).await?;
+    query_nut_list(&mut stream, "LIST UPS", line_consumer).await?;
 
     Ok(())
 }
@@ -119,53 +121,76 @@ async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVa
             Ok(())
         };
 
-        query_nut_list(&mut stream, format!("VAR {}\n", ups).as_str(), line_consumer).await?;
+        query_nut_list(&mut stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
     }
 
     Ok(())
 }
 
-async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query_param: &str, mut line_consumer: F) -> ErrorResult<()>
+async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query: &str, mut line_consumer: F) -> ErrorResult<()>
         where F: FnMut(&str) -> ErrorResult<()> + Send {
-    let query = format!("LIST {}\n", query_param);
-    stream.write_all(query.as_bytes()).await?;
+    let query_line = format!("{}\n", query);
+    stream.write_all(query_line.as_bytes()).await?;
     let mut query_state = NutQueryListState::Initial;
+    let mut nut_error_message = "".to_owned();
     while let Some(line) = stream.lines().next_line().await? {
+        // Empty line
+        if line.is_empty() {
+            // Skip line
+            continue;
+        }
         // Start of list
-        if line.starts_with("BEGIN") {
+        if line.starts_with("BEGIN ") {
             if query_state == NutQueryListState::Initial {
                 query_state = NutQueryListState::Begun;
                 // Continue with list
                 continue;
             } else {
                 // Wrong order
+                query_state = NutQueryListState::Malformed;
                 break;
             }
         }
         // End of list
-        if line.starts_with("END") {
+        if line.starts_with("END ") {
             if query_state == NutQueryListState::Begun {
                 query_state = NutQueryListState::Ended;
                 // End list
                 break;
             } else {
                 // Wrong order
+                query_state = NutQueryListState::Malformed;
                 break;
             }
+        }
+        // Error
+        if line.starts_with("ERR ") {
+            query_state = NutQueryListState::Error;
+            nut_error_message = line.strip_prefix("ERR ").unwrap().to_owned();
+            break;
         }
 
         // Structural error if content outside BEGIN-END section
         if query_state != NutQueryListState::Begun {
+            query_state = NutQueryListState::Malformed;
             break;
         }
 
-        // Feed line to consumer
+        // Within BEGIN-END so feed line to consumer
         line_consumer(&line)?;
     }
 
-    // Check if a list was traversed or if the content was malformed
-    if query_state != NutQueryListState::Ended {
-        return Err(format!("Malformed list for NUT query \"{}\".", query).into());
+    // Check if the list didn't finish traversal when no error was encountered
+    if query_state != NutQueryListState::Ended && query_state != NutQueryListState::Error {
+        query_state = NutQueryListState::Malformed;
+    }
+
+    // Check if error or malformed
+    if query_state == NutQueryListState::Error {
+        return Err(format!("Received error for query \"{}\": {}", query, nut_error_message).into());
+    }
+    if query_state == NutQueryListState::Malformed {
+        return Err(format!("Malformed list for query \"{}\".", query).into());
     }
 
     Ok(())

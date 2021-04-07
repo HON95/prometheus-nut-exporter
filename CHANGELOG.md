@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added UPS description to `nut_ups_info`.
+
 ### Changed
 
 - Replace Docker image tags `stable` and `bleeding` with `latest`, `X`, `X.Y` and `X.Y.Z` (parts of the semantic version).
@@ -19,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Added Tini as container entrypoint to handler signals properly (i.e. not stall when exiting).
+- Fixed parsing error when multiple UPSes exist.
 
 ### Security
 
