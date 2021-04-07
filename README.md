@@ -7,6 +7,8 @@
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
+**Note**: The Docker image tags `stable` and `bleeding` are no longer used. Use `1` (stable v1) and `latest` (unstable) instead.
+
 ## Usage
 
 ### NUT
@@ -16,8 +18,6 @@ Set up NUT in server mode and make sure the TCP port (3493 by default) is access
 If you want to test that it's working, run `telnet <nut-server> 3493` and then `VER`, `LIST UPS` and `LIST VAR <ups>`.
 
 ### Docker
-
-**Note**: The Docker image tags `stable` and `bleeding` are no longer used. Use `latest` (unstable) and `1` (stable v1) instead.
 
 Example `docker-compose.yml`:
 
