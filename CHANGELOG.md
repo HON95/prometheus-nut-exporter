@@ -8,13 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added UPS description to `nut_ups_info`.
-- Added lots of more metrics.
-
 ### Changed
-
-- Replace Docker image tags `stable` and `bleeding` with `latest`, `X`, `X.Y` and `X.Y.Z` (parts of the semantic version).
-- Renamed a few voltage-related metrics (slightly breaking for existing setups, no easy way to add legacy aliases).
 
 ### Deprecated
 
@@ -22,10 +16,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Added Tini as container entrypoint to handler signals properly (i.e. not stall when exiting).
-- Fixed parsing error when multiple UPSes exist.
-
 ### Security
+
+## [1.1.0] - 2021-04-07
+
+### Added
+
+- Added UPS description to `nut_ups_info`.
+- Added lots of more metrics.
+
+### Changed
+
+- Replaced Docker image tags `stable` and `bleeding` with `latest`, `X`, `X.Y` and `X.Y.Z` (parts of the semantic version).
+- Renamed a few voltage-related metrics (slightly breaking).
+
+### Fixed
+
+- Added Tini as container entrypoint to handle signals properly (i.e. not stall when exiting).
+- Fixed parsing error when multiple UPSes exist.
 
 ## [1.0.1] - 2020-06-29
 
