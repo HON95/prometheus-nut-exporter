@@ -6,8 +6,8 @@ use regex::Regex;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 
-use crate::common::{NutVersion, SimpleResult, UPS_DESCRIPTION_PSEUDOVAR, UpsVarMap, VarMap};
-use crate::config::Config;
+use crate::common::ErrorResult;
+use crate::metrics::{NutVersion, UPS_DESCRIPTION_PSEUDOVAR, UpsVarMap, VarMap};
 use crate::openmetrics_builder::build_openmetrics_content;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -17,19 +17,19 @@ enum NutQueryListState {
     Ended,
 }
 
-pub async fn scrape_nut_to_openmetrics(config: &Config, target: &str) -> Result<String, Box<dyn Error>> {
+pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn Error>> {
     let raw_stream = match TcpStream::connect(target).await {
         Ok(val) => val,
-        Err(_) => return Err("Failed to connect to target.".into()),
+        Err(err) => return Err(format!("Failed to connect to target: {}", err).into()),
     };
     let mut stream = BufReader::new(raw_stream);
 
     let (upses, nut_version) = match scrape_nut_upses(&mut stream).await {
         Ok(val) => val,
-        Err(err) => return Err(format!("Failed to communicate with target.\n\n{}", err).into()),
+        Err(err) => return Err(format!("Failed to communicate with target: {}", err).into()),
     };
 
-    let content = build_openmetrics_content(&config, &upses, &nut_version);
+    let content = build_openmetrics_content(&upses, &nut_version);
 
     Ok(content)
 }
@@ -37,6 +37,7 @@ pub async fn scrape_nut_to_openmetrics(config: &Config, target: &str) -> Result<
 async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
     let mut upses: UpsVarMap = HashMap::new();
     let mut nut_version: NutVersion = "".to_owned();
+
     query_nut_version(&mut stream, &mut nut_version).await?;
     query_nut_upses(&mut stream, &mut upses).await?;
     query_nut_vars(&mut stream, &mut upses).await?;
@@ -44,7 +45,7 @@ async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsV
     Ok((upses, nut_version))
 }
 
-async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> SimpleResult<()> {
+async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> ErrorResult<()> {
     const RAW_VERSION_PATTERN: &str = r#"(?P<version>\d+\.\d+\.\d+)"#;
     lazy_static! {
         static ref VERSION_PATTERN: Regex = Regex::new(RAW_VERSION_PATTERN).unwrap();
@@ -66,7 +67,7 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
     Ok(())
 }
 
-async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> SimpleResult<()> {
+async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     const RAW_UPS_PATTERN: &str = r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#;
     lazy_static! {
         static ref UPS_PATTERN: Regex = Regex::new(RAW_UPS_PATTERN).unwrap();
@@ -95,7 +96,7 @@ async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsV
     Ok(())
 }
 
-async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> SimpleResult<()> {
+async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
     lazy_static! {
         static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
@@ -124,8 +125,8 @@ async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVa
     Ok(())
 }
 
-async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query_param: &str, mut line_consumer: F) -> SimpleResult<()>
-        where F: FnMut(&str) -> SimpleResult<()> + Send {
+async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query_param: &str, mut line_consumer: F) -> ErrorResult<()>
+        where F: FnMut(&str) -> ErrorResult<()> + Send {
     let query = format!("LIST {}\n", query_param);
     stream.write_all(query.as_bytes()).await?;
     let mut query_state = NutQueryListState::Initial;

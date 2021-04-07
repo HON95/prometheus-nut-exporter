@@ -13,4 +13,4 @@ Copied from the source code.
 | `nut_beeper_status` | `ups.beeper.status` | If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3). | |
 | `nut_load` | `ups.load` | Load. (0-1) | |
 | `nut_realpower_nominal_watts` | `ups.realpower.nominal` | Nominal value of real power. | `W` |
-| `nut_status` | `ups.status` | UPS status. Unknown (0), on line (OL) (1), on battery (OB) (2) or low battery (LB) (3). | `W` |
+| `nut_status` | `ups.status` | UPS status. Unknown (0), on line (1, "OL"), on battery (2, "OB"), or low battery (3, "LB"). | |

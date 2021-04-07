@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-use crate::common::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
-use crate::config::Config;
+use crate::meta::APP_VERSION;
+use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
 
-pub fn build_openmetrics_content(config: &Config, upses: &UpsVarMap, nut_version: &str) -> String {
+pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String {
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
 
     // Exporter metadata
-    let exporter_info_line = print_exporter_info_metric(config);
+    let exporter_info_line = print_exporter_info_metric();
     metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(exporter_info_line);
 
     // NUT metadata
@@ -54,10 +54,10 @@ fn print_metric_info(metric: &Metric) -> String {
     builder
 }
 
-fn print_exporter_info_metric(config: &Config) -> String {
+fn print_exporter_info_metric() -> String {
     let metric = EXPORTER_INFO_METRIC;
 
-    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=config.version)
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=APP_VERSION)
 }
 
 fn print_nut_info_metric(nut_version: &str) -> String {

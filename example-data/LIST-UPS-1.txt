@@ -1,0 +1,4 @@
+BEGIN LIST UPS
+UPS ups-1 "desc 1"
+UPS ups-3 ""
+END LIST UPS

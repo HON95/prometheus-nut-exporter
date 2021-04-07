@@ -1,6 +1,8 @@
 mod common;
 mod config;
 mod http_server;
+mod meta;
+mod metrics;
 mod nut_client;
 mod openmetrics_builder;
 
