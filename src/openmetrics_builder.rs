@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
+use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
 
 pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String {
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
@@ -69,13 +69,14 @@ fn print_nut_info_metric(nut_version: &str) -> String {
 fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
     let metric = UPS_INFO_METRIC;
     let empty_str = "".to_owned();
+    let description = vars.get(UPS_DESCRIPTION_PSEUDOVAR).unwrap_or(&empty_str);
     let battery_type = vars.get("battery.type").unwrap_or(&empty_str);
     let device_model = vars.get("device.model").unwrap_or(&empty_str);
     let driver = vars.get("driver.name").unwrap_or(&empty_str);
 
     format!(
-        "{metric}{{ups=\"{ups}\",battery_type=\"{battery_type}\",device_model=\"{device_model}\",driver=\"{driver}\"}} 1\n",
-        metric=metric.metric, ups=ups, battery_type=battery_type, device_model=device_model, driver=driver
+        "{metric}{{ups=\"{ups}\",description=\"{description}\",battery_type=\"{battery_type}\",device_model=\"{device_model}\",driver=\"{driver}\"}} 1\n",
+        metric=metric.metric, ups=ups, description=description, battery_type=battery_type, device_model=device_model, driver=driver
     )
 }
 

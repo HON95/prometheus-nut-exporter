@@ -1,0 +1,1 @@
+Network UPS Tools upsd 2.7.4 - http://www.networkupstools.org/
