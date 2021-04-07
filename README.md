@@ -31,6 +31,7 @@ services:
       - HTTP_PORT=9995
       - HTTP_PATH=/nut
       - LOG_REQUESTS_CONSOLE=false
+      - PRINT_METRICS_AND_EXIT=false
     ports:
       - "9995:9995/tcp"
 ```

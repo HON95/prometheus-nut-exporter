@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added UPS description to `nut_ups_info`.
+- Added lots of more metrics.
 
 ### Changed
 
 - Replace Docker image tags `stable` and `bleeding` with `latest`, `X`, `X.Y` and `X.Y.Z` (parts of the semantic version).
+- Renamed a few voltage-related metrics (slightly breaking for existing setups, no easy way to add legacy aliases).
 
 ### Deprecated
 
