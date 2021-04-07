@@ -10,11 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replace Docker image tags `stable` and `bleeding` with `latest`, `X`, `X.Y` and `X.Y.Z` (parts of the semantic version).
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Added Tini as container entrypoint to handler signals properly (i.e. not stall when exiting).
 
 ### Security
 

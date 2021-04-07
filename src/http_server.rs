@@ -8,7 +8,7 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::server::conn::AddrStream;
 use url::form_urlencoded;
 
-use crate::common::{PROJECT_TITLE, PROJECT_URL};
+use crate::meta::{APP_NAME, APP_AUTHOR, APP_VERSION};
 use crate::config::Config;
 use crate::nut_client::scrape_nut_to_openmetrics;
 
@@ -61,10 +61,8 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
 
 fn endpoint_home(config: &Config) -> Response<Body> {
     let mut content = String::new();
-    content.push_str(&format!("{}\n", PROJECT_TITLE));
-    content.push_str("\n");
-    content.push_str(&format!("Project: {}\n", PROJECT_URL));
-    content.push_str("\n");
+    content.push_str(&format!("{} version {} by {}.\n", APP_NAME, APP_VERSION, APP_AUTHOR));
+    content.push('\n');
     content.push_str(&format!("Usage: {}?target=<target>\n", config.http_path));
 
     let mut response = Response::new(Body::empty());
@@ -95,7 +93,7 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
     let mut status = StatusCode::OK;
 
     if !target.is_empty() {
-        let result_res = scrape_nut_to_openmetrics(&config, target).await;
+        let result_res = scrape_nut_to_openmetrics(target).await;
         match result_res {
             Ok(result) => {
                 content.push_str(result.as_str());

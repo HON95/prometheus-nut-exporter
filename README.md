@@ -15,6 +15,8 @@ Set up NUT in server mode and make sure the TCP port (3493 by default) is access
 
 ### Docker
 
+**Note**: The Docker image tags `stable` and `bleeding` are no longer used. Use `latest` (unstable) and `1` (stable) instead.
+
 Example `docker-compose.yml`:
 
 ```yaml
@@ -22,7 +24,7 @@ version: "3.7"
 
 services:
   nut-exporter:
-    image: hon95/prometheus-nut-exporter:stable
+    image: hon95/prometheus-nut-exporter:1
     environment:
       - TZ=Europe/Oslo
       # Defaults, may be omitted

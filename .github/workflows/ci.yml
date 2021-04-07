@@ -7,9 +7,11 @@ on:
     branches: ["*"]
   release:
     types: [published]
+  workflow_dispatch: {}
 
 env:
   CARGO_TERM_COLOR: always
+  DOCKER_REPO: hon95/prometheus-nut-exporter
 
 jobs:
   check:
@@ -25,39 +27,65 @@ jobs:
       run: cargo clippy -- -D warnings
     - name: Check for trailing whitespace
       run: "! egrep -RHn '\\s+$' src/"
+
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: check
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v2
-    - name: Extract version
-      run: echo "::set-env name=VERSION::$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))"
-    - name: Write version to file
-      run: echo "$VERSION" > VERSION
-    - name: Push to Docker Hub
-      uses: docker/build-push-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+    - name: Update version
+      run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
       with:
         username: ${{secrets.DOCKER_USERNAME}}
         password: ${{secrets.DOCKER_PASSWORD}}
-        repository: hon95/prometheus-nut-exporter
-        tags: bleeding
+    - name: Push to Docker Hub
+      uses: docker/build-push-action@v2
+      with:
+        build-args: |
+          APP_VERSION=${{env.version}}
+        tags: |
+          ${{env.DOCKER_REPO}}:latest
+        push: true
+
   publish-stable:
     if: github.event_name == 'release' && github.event.action == 'published' && startsWith(github.ref, 'refs/tags/v')
     needs: check
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
     - name: Extract version
-      run: echo "::set-env name=VERSION::$(echo ${GITHUB_REF#refs/tags/v})"
-    - name: Write version to file
-      run: echo "$VERSION" > VERSION
-    - name: Push to Docker Hub
-      uses: docker/build-push-action@v1
+      run: |
+        # Get version from git tag
+        VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
+        echo "version=$VERSION" | tee -a $GITHUB_ENV
+        # Check if semantic version (3 numbers, ignore pre-release and metadata)
+        echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
+        # Extract other version representations
+        echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
+        echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
+        echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
       with:
         username: ${{secrets.DOCKER_USERNAME}}
         password: ${{secrets.DOCKER_PASSWORD}}
-        repository: hon95/prometheus-nut-exporter
-        tags: stable, ${{env.VERSION}}
+    - name: Push to Docker Hub
+      uses: docker/build-push-action@v2
+      with:
+        build-args: |
+          APP_VERSION=${{env.version}}
+        tags: |
+          ${{env.DOCKER_REPO}}:latest
+          ${{env.DOCKER_REPO}}:${{env.version_major}}
+          ${{env.DOCKER_REPO}}:${{env.version_minor}}
+          ${{env.DOCKER_REPO}}:${{env.version_patch}}
+        push: true
