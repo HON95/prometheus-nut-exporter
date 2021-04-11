@@ -53,7 +53,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 36] = [
+pub static BASIC_METRICS: [Metric; 39] = [
     // Status, uptime, load
     Metric {
         metric: "nut_status",
@@ -347,10 +347,35 @@ pub static BASIC_METRICS: [Metric; 36] = [
         nut_var: "ups.realpower.nominal",
         var_transform: VarTransform::None,
     },
+    // Compatibility metrics
+    Metric {
+        metric: "nut_battery_volts",
+        help: "Battery voltage. (Compatibility metric, use nut_battery_voltage_volts instead.)",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "battery.voltage",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_input_volts",
+        help: "Input voltage. (Compatibility metric, use nut_input_voltage_volts instead.)",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "input.voltage",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_output_volts",
+        help: "Output voltage. (Compatibility metric, use nut_output_voltage_volts instead.)",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "output.voltage",
+        var_transform: VarTransform::None,
+    },
 ];
 
 lazy_static! {
-    // Containes all metrics, indexed by metric name
+    // Contains all metrics, indexed by metric name
     pub static ref METRICS: HashMap<&'static str, &'static Metric> = {
         let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
         map.insert(EXPORTER_INFO_METRIC.metric, &EXPORTER_INFO_METRIC);
@@ -363,11 +388,11 @@ lazy_static! {
         map
     };
 
-    // Containes all metrics based on NUT vars, indexed by var
-    pub static ref VAR_METRICS: HashMap<&'static str, &'static Metric> = {
-        let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
+    // Contains all metrics based on NUT vars, indexed by var
+    pub static ref VAR_METRICS: HashMap<&'static str, Vec<&'static Metric>> = {
+        let mut map: HashMap<&'static str, Vec<&'static Metric>> = HashMap::new();
         for metric in BASIC_METRICS.iter() {
-            map.insert(metric.nut_var, &metric);
+            map.entry(metric.nut_var).or_insert_with(Vec::new).push(&metric);
         }
 
         map

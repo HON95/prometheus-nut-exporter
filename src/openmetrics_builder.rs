@@ -21,9 +21,11 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
         metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(ups_info_line);
         // UPS vars
         for (var, val) in vars.iter() {
-            if let Some(metric) = VAR_METRICS.get(var.as_str()) {
-                if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
-                    metric_lines.get_mut(metric.metric).unwrap().push(var_line);
+            if let Some(metrics) = VAR_METRICS.get(var.as_str()) {
+                for metric in metrics {
+                    if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
+                        metric_lines.get_mut(metric.metric).unwrap().push(var_line);
+                    }
                 }
             }
         }
@@ -58,13 +60,11 @@ fn print_metric_info(metric: &Metric) -> String {
 
 fn print_exporter_info_metric() -> String {
     let metric = EXPORTER_INFO_METRIC;
-
     format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=APP_VERSION)
 }
 
 fn print_nut_info_metric(nut_version: &str) -> String {
     let metric = NUT_INFO_METRIC;
-
     format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=nut_version)
 }
 

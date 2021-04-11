@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::convert::Infallible;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 
-use chrono::Local;
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::server::conn::AddrStream;
@@ -25,13 +24,16 @@ pub async fn run_server(config: Config) {
     });
     let server = Server::bind(&endpoint).serve(service_maker);
 
-    println!("Listening on: http://{}", endpoint);
+    log::info!("Listening on http://{}", endpoint);
     if let Err(err) = server.await {
-        eprintln!("Server error: {}", err);
+        log::error!("Server error: {}", err);
     }
 }
 
 async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketAddr) -> Result<Response<Body>, Infallible> {
+    log::trace!("HTTP request from: {}", remote_addr);
+    log::trace!("HTTP request URL: {}", request.uri().path());
+
     let query_args: HashMap<String, String> = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes()).into_owned().collect();
 
     let metrics_path = &config.http_path;
@@ -54,7 +56,8 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
         response = endpoint_not_found();
     }
 
-    log_request(&config, &request, &remote_addr, &response);
+    // Log request to console
+    log::debug!("Request: {} {} {} {}", remote_addr, request.method(), request.uri().path(), response.status().to_string());
 
     Ok(response)
 }
@@ -113,14 +116,4 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
     *response.status_mut() = status;
 
     response
-}
-
-fn log_request(config: &Config, request: &Request<Body>, remote_addr: &SocketAddr, response: &Response<Body>) {
-    if config.log_requests_console {
-        // ISO 8601 timestamp
-        let local_time = Local::now().format("%+");
-        let status = response.status().to_string();
-        println!("{time} {client} {method} \"{path}\" {status}",
-            time=local_time, client=remote_addr, method=request.method(), path=request.uri().path(), status=status);
-    }
 }

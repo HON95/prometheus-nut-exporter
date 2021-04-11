@@ -8,13 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added proper logging with adjustable log level.
+- Added duplicate compatibility metrics to compensate for the renamed metrics in the previous release.
+
 ### Changed
+
+- Changed request logging to use log level `debug` instead of the `LOG_REQUESTS_CONSOLE` environment variable.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Fixed failing to parse non-semantic NUT versions.
 
 ### Security
 

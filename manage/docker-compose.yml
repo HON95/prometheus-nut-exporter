@@ -11,10 +11,10 @@ services:
     environment:
       - TZ=Europe/Oslo
       - RUST_BACKTRACE=1
-      - HTTP_PORT=9995
-      - HTTP_PATH=/nut
-      - LOG_REQUESTS_CONSOLE=true
-      - PRINT_METRICS_AND_EXIT=false
+      - RUST_LOG=debug
+      #- HTTP_PORT=9995
+      - HTTP_PATH=/metrics
+      #- PRINT_METRICS_AND_EXIT=true
     # ports:
     #   - "127.0.0.1:9995:9995/tcp"
     network_mode: host

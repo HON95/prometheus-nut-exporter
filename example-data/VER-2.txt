@@ -1,0 +1,1 @@
+Network UPS Tools upsd DSM6-2-25510-201118 - http://www.networkupstools.org/
