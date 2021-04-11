@@ -7,8 +7,6 @@
 
 A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
-**Note**: The Docker image tags `stable` and `bleeding` are no longer used. Use `1` (stable v1) and `latest` (unstable) instead.
-
 ## Usage
 
 ### NUT

@@ -51,6 +51,7 @@ jobs:
           APP_VERSION=${{env.version}}
         tags: |
           ${{env.DOCKER_REPO}}:latest
+          ${{env.DOCKER_REPO}}:bleeding
         push: true
 
   publish-stable:
@@ -88,4 +89,5 @@ jobs:
           ${{env.DOCKER_REPO}}:${{env.version_major}}
           ${{env.DOCKER_REPO}}:${{env.version_minor}}
           ${{env.DOCKER_REPO}}:${{env.version_patch}}
+          ${{env.DOCKER_REPO}}:stable
         push: true
