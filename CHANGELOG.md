@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added proper logging with adjustable log level.
+- Added duplicate compatibility metrics to compensate for the renamed metrics in the previous release.
 
 ### Changed
 
