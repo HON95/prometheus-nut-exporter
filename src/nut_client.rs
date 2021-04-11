@@ -48,13 +48,15 @@ async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsV
 }
 
 async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> ErrorResult<()> {
-    const RAW_VERSION_PATTERN: &str = r#"(?P<version>\d+\.\d+\.\d+)"#;
+    const RAW_VERSION_PATTERN: &str = r#"upsd (?P<version>.+) -"#;
     lazy_static! {
         static ref VERSION_PATTERN: Regex = Regex::new(RAW_VERSION_PATTERN).unwrap();
     }
 
     stream.write_all(b"VER\n").await?;
+    log::trace!("NUT query sent: {}", "VER");
     if let Some(line) = stream.lines().next_line().await? {
+        log::trace!("NUT query received: {}", line);
         let captures_opt = VERSION_PATTERN.captures(&line);
         match captures_opt {
             Some(captures) => {
@@ -131,9 +133,12 @@ async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query: &str, mut l
         where F: FnMut(&str) -> ErrorResult<()> + Send {
     let query_line = format!("{}\n", query);
     stream.write_all(query_line.as_bytes()).await?;
+    log::trace!("NUT query sent: {}", query);
     let mut query_state = NutQueryListState::Initial;
     let mut nut_error_message = "".to_owned();
     while let Some(line) = stream.lines().next_line().await? {
+        log::trace!("NUT query received: {}", line);
+
         // Empty line
         if line.is_empty() {
             // Skip line

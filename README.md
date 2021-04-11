@@ -29,7 +29,9 @@ services:
     image: hon95/prometheus-nut-exporter:1
     environment:
       - TZ=Europe/Oslo
+      - HTTP_PATH=/metrics
       # Defaults
+      #- RUST_LOG=info
       #- HTTP_PORT=9995
       #- HTTP_PATH=/nut
       #- LOG_REQUESTS_CONSOLE=false
@@ -62,6 +64,19 @@ scrape_configs:
         # Insert NUT exporter address here
         replacement: nut-exporter:9995
 ```
+
+## Configuration
+
+### Docker Image Versions
+
+Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
+
+### Environment Variables
+
+- `RUST_LOG` (defaults to `info`): The log level used by the console/STDOUT. Set to `debug` so show HTTP requests and `trace` to show extensive debugging info.
+- `HTTP_PORT` (defaults to `9995`): The HTTP server port.
+- `HTTP_PATH` (defaults to `nut`): The HTTP server metrics path. You may want to set it to `/metrics` on new setups to avoid extra Prometheus configuration (not changed here due to compatibility).
+- `PRINT_METRICS_AND_EXIT` (defaults to `false`): Print a Markdown-formatted table consisting of all metrics and then immediately exit. Used mainly for generating documentation.
 
 ## Metrics
 

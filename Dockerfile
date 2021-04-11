@@ -32,6 +32,8 @@ fi
 
 ## Runtime stage
 FROM debian:10-slim AS runtime
+# Default log level
+ENV RUST_LOG=info
 WORKDIR /app
 
 # Add tini to properly handle signals
