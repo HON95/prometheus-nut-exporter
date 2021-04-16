@@ -63,6 +63,23 @@ scrape_configs:
         replacement: nut-exporter:9995
 ```
 
+### Kubernetes Resource Usage
+
+Example container resources requests and limits.
+This was done by scraping one NUT server with two UPSes.
+Resource usage was observed across 7 days period.
+This can be lowered even more but should be sufficient as a starting point.
+
+```yaml
+resources:
+  limits:
+    cpu: "10m"
+    memory: "16Mi"
+  requests:
+    cpu: "1m"
+    memory: "8Mi"
+```
+
 ## Configuration
 
 ### Docker Image Versions
