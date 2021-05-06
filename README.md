@@ -80,6 +80,10 @@ resources:
     memory: "8Mi"
 ```
 
+### Grafana
+
+[Example dashboard](https://grafana.com/grafana/dashboards/14371)
+
 ## Configuration
 
 ### Docker Image Versions
