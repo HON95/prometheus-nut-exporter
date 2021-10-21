@@ -65,6 +65,8 @@ scrape_configs:
         replacement: nut-exporter:9995
 ```
 
+In the above example, `nut-exporter:9995` is the address and port of the NUT _exporter_ while `nut-server:3493` is the address and port of the NUT _server_ to query through the exporter.
+
 ### Kubernetes Resource Usage
 
 Example container resources requests and limits.
