@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: cargo build --verbose
     - name: Run Clippy
-      run: cargo clippy -- -D warnings
+      run: cargo clippy -- # -D warnings
     - name: Check for trailing whitespace
       run: "! egrep -RHn '\\s+$' src/"
 
