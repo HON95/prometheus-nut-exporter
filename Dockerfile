@@ -38,7 +38,7 @@ WORKDIR /app
 
 # Add tini to properly handle signals
 ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}-${TARGETPLATFORM#linux/}/tini /tini
 RUN chmod +x /tini
 
 # Add non-root user
