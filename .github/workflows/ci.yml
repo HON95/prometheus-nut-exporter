@@ -11,7 +11,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  DOCKER_REPO: eagleone1/hon95-prometheus-nut-exporter
+  DOCKER_REPO: hon95/prometheus-nut-exporter
 
 jobs:
   check:
@@ -29,7 +29,7 @@ jobs:
       run: "! egrep -RHn '\\s+$' src/"
 
   publish-bleeding:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/fix-ci'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: check
     runs-on: ubuntu-latest
     steps:
