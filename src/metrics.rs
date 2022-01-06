@@ -53,7 +53,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 39] = [
+pub static BASIC_METRICS: [Metric; 40] = [
     // Status, uptime, load
     Metric {
         metric: "nut_status",
@@ -86,6 +86,14 @@ pub static BASIC_METRICS: [Metric; 39] = [
         unit: "",
         nut_var: "ups.load",
         var_transform: VarTransform::Percent,
+    },
+    Metric {
+        metric: "nut_ups_temperature",
+        help: "UPS temperature, degrees C",
+        type_: "gauge",
+        unit: "degC",
+        nut_var: "ups.temperature",
+        var_transform: VarTransform::None,
     },
     // Battery
     Metric {
