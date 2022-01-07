@@ -112,7 +112,7 @@ Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
 | `nut_beeper_status` | `ups.beeper.status` |  | If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3). |
 | `nut_uptime_seconds` | `device.uptime` | `s` | Device uptime. |
 | `nut_load` | `ups.load` |  | Load. (0-1) |
-| `nut_ups_temperature_celsius` | `ups.temperature` | `degrees C` | UPS temperature. |
+| `nut_temperature_celsius` | `ups.temperature` | `degrees C` | UPS temperature. |
 | `nut_battery_charge` | `battery.charge` |  | Battery level. (0-1) |
 | `nut_battery_charge_low` | `battery.charge.low` |  | Battery level threshold for low state. (0-1) |
 | `nut_battery_charge_warning` | `battery.charge.warning` |  | Battery level threshold for warning state. (0-1) |
