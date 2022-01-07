@@ -88,7 +88,7 @@ pub static BASIC_METRICS: [Metric; 40] = [
         var_transform: VarTransform::Percent,
     },
     Metric {
-        metric: "nut_ups_temperature_celsius",
+        metric: "nut_temperature_celsius",
         help: "UPS temperature",
         type_: "gauge",
         unit: "degrees C",
