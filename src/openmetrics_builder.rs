@@ -78,7 +78,7 @@ fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
     attributes.insert("description2", vars.get("device.description").unwrap_or(&empty_str));
     attributes.insert("location", vars.get("device.location").unwrap_or(&empty_str));
     attributes.insert("type", vars.get("device.type").unwrap_or(&empty_str));
-    attributes.insert("manufacturer", vars.get("device.mft").unwrap_or(&empty_str));
+    attributes.insert("manufacturer", vars.get("device.mfr").unwrap_or(&empty_str));
     attributes.insert("model", vars.get("device.model").unwrap_or(&empty_str));
     attributes.insert("battery_type", vars.get("battery.type").unwrap_or(&empty_str));
     attributes.insert("driver", vars.get("driver.name").unwrap_or(&empty_str));
