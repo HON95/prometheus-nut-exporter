@@ -36,13 +36,13 @@ pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn E
     Ok(content)
 }
 
-async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
+async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
     let mut upses: UpsVarMap = HashMap::new();
     let mut nut_version: NutVersion = "".to_owned();
 
-    query_nut_version(&mut stream, &mut nut_version).await?;
-    query_nut_upses(&mut stream, &mut upses).await?;
-    query_nut_vars(&mut stream, &mut upses).await?;
+    query_nut_version(stream, &mut nut_version).await?;
+    query_nut_upses(stream, &mut upses).await?;
+    query_nut_vars(stream, &mut upses).await?;
 
     Ok((upses, nut_version))
 }
@@ -71,7 +71,7 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
     Ok(())
 }
 
-async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
+async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     const RAW_UPS_PATTERN: &str = r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#;
     lazy_static! {
         static ref UPS_PATTERN: Regex = Regex::new(RAW_UPS_PATTERN).unwrap();
@@ -95,12 +95,12 @@ async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsV
         Ok(())
     };
 
-    query_nut_list(&mut stream, "LIST UPS", line_consumer).await?;
+    query_nut_list(stream, "LIST UPS", line_consumer).await?;
 
     Ok(())
 }
 
-async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
+async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
     lazy_static! {
         static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
@@ -123,7 +123,7 @@ async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVa
             Ok(())
         };
 
-        query_nut_list(&mut stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
+        query_nut_list(stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
     }
 
     Ok(())

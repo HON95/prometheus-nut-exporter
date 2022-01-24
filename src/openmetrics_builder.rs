@@ -120,7 +120,7 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
         },
         VarTransform::UpsStatus => {
             // Remove stuff we don't care about
-            let value_start = value.splitn(2, ' ').next().unwrap();
+            let value_start = value.split_once(' ').map_or(value, |x| x.0);
             result_value = match value_start {
                 "OL" => 1f64,
                 "OB" => 2f64,
