@@ -170,7 +170,7 @@ pub static BASIC_METRICS: [Metric; 42] = [
     },
     Metric {
         metric: "nut_battery_voltage_high_volts",
-        help: "Battery voltage for full (charge level calculation)",
+        help: "Battery voltage for full (charge level calculation).",
         type_: "gauge",
         unit: "V",
         nut_var: "battery.voltage.high",
@@ -178,7 +178,7 @@ pub static BASIC_METRICS: [Metric; 42] = [
     },
     Metric {
         metric: "nut_battery_voltage_low_volts",
-        help: "Battery voltage for empty (charge level calculation)",
+        help: "Battery voltage for empty (charge level calculation).",
         type_: "gauge",
         unit: "V",
         nut_var: "battery.voltage.low",
