@@ -120,6 +120,8 @@ Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
 | `nut_battery_runtime_seconds` | `battery.runtime` | `s` | Battery runtime. |
 | `nut_battery_runtime_low_seconds` | `battery.runtime.low` | `s` | Battery runtime threshold for state low. |
 | `nut_battery_runtime_restart_seconds` | `battery.runtime.restart` | `s` | Battery runtime threshold for restart after power-off. |
+| `nut_delay_shutdown_seconds` | `ups.delay.shutdown` |  | Interval to wait after shutdown with delay command. |
+| `nut_delay_start_seconds` | `ups.delay.start` |  | Interval to wait before (re)starting the load. |
 | `nut_battery_voltage_volts` | `battery.voltage` | `V` | Battery voltage. |
 | `nut_battery_voltage_nominal_volts` | `battery.voltage.nominal` | `V` | Battery voltage (nominal). |
 | `nut_battery_voltage_high_volts` | `battery.voltage.high` | `V` | Battery voltage for full (charge level calculation). |

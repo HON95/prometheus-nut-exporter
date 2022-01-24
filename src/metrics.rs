@@ -53,7 +53,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 42] = [
+pub static BASIC_METRICS: [Metric; 44] = [
     // Status, uptime, load
     Metric {
         metric: "nut_status",
@@ -150,6 +150,22 @@ pub static BASIC_METRICS: [Metric; 42] = [
         type_: "gauge",
         unit: "s",
         nut_var: "battery.runtime.restart",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_delay_shutdown_seconds",
+        help: "Interval to wait after shutdown with delay command.",
+        type_: "gauge",
+        unit: "s",
+        nut_var: "ups.delay.shutdown",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_delay_start_seconds",
+        help: "Interval to wait before (re)starting the load.",
+        type_: "gauge",
+        unit: "s",
+        nut_var: "ups.delay.start",
         var_transform: VarTransform::None,
     },
     Metric {
