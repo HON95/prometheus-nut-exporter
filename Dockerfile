@@ -5,7 +5,7 @@ ARG APP_ENV=prod
 ARG TINI_VERSION=v0.19.0
 
 ## Build stage
-FROM rust:1.51-buster AS build
+FROM rust:1.58-buster AS build
 WORKDIR /app
 
 COPY Cargo.toml ./
