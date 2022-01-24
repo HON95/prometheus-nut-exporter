@@ -53,7 +53,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 40] = [
+pub static BASIC_METRICS: [Metric; 42] = [
     // Status, uptime, load
     Metric {
         metric: "nut_status",
@@ -166,6 +166,22 @@ pub static BASIC_METRICS: [Metric; 40] = [
         type_: "gauge",
         unit: "V",
         nut_var: "battery.voltage.nominal",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_battery_voltage_high_volts",
+        help: "Battery voltage for full (charge level calculation)",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "battery.voltage.high",
+        var_transform: VarTransform::None,
+    },
+    Metric {
+        metric: "nut_battery_voltage_low_volts",
+        help: "Battery voltage for empty (charge level calculation)",
+        type_: "gauge",
+        unit: "V",
+        nut_var: "battery.voltage.low",
         var_transform: VarTransform::None,
     },
     Metric {

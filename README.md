@@ -122,6 +122,8 @@ Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
 | `nut_battery_runtime_restart_seconds` | `battery.runtime.restart` | `s` | Battery runtime threshold for restart after power-off. |
 | `nut_battery_voltage_volts` | `battery.voltage` | `V` | Battery voltage. |
 | `nut_battery_voltage_nominal_volts` | `battery.voltage.nominal` | `V` | Battery voltage (nominal). |
+| `nut_battery_voltage_high_volts` | `battery.voltage.high` | `V` | Battery voltage for full (charge level calculation). |
+| `nut_battery_voltage_low_volts` | `battery.voltage.low` | `V` | Battery voltage for empty (charge level calculation). |
 | `nut_battery_temperature_celsius` | `battery.temperature` | `degrees C` | Battery temperature. |
 | `nut_input_voltage_volts` | `input.voltage` | `V` | Input voltage. |
 | `nut_input_voltage_nominal_volts` | `input.voltage.nominal` | `V` | Input voltage (nominal). |
