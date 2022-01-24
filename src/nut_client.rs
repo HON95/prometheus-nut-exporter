@@ -78,7 +78,7 @@ async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsV
     }
 
     let line_consumer = |line: &str| {
-        let captures_opt = UPS_PATTERN.captures(&line);
+        let captures_opt = UPS_PATTERN.captures(line);
         match captures_opt {
             Some(captures) => {
                 let ups = captures["ups"].to_owned();
@@ -108,7 +108,7 @@ async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVa
 
     for (ups, vars) in upses.iter_mut() {
         let line_consumer = |line: &str| {
-            let captures_opt = VAR_PATTERN.captures(&line);
+            let captures_opt = VAR_PATTERN.captures(line);
             match captures_opt {
                 Some(captures) => {
                     let variable = captures["var"].to_owned();
@@ -159,8 +159,8 @@ async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query: &str, mut l
         // End of list
         if line.starts_with("END ") {
             if query_state == NutQueryListState::Begun {
-                query_state = NutQueryListState::Ended;
                 // End list
+                query_state = NutQueryListState::Ended;
                 break;
             } else {
                 // Wrong order

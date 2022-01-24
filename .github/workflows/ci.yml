@@ -19,14 +19,12 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-    - name: Install dependencies
+    - name: Add dependencies
       run: rustup component add clippy
     - name: Build
       run: cargo build --verbose
-    - name: Run Clippy
-      run: cargo clippy -- -D warnings
-    - name: Check for trailing whitespace
-      run: "! egrep -RHn '\\s+$' src/"
+    - name: Check code
+      run: manage/check.sh
 
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'

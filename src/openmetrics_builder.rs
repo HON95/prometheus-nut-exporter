@@ -17,13 +17,13 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
         // UPS metadata
-        let ups_info_line = print_ups_info_metric(&ups, &vars);
+        let ups_info_line = print_ups_info_metric(ups, vars);
         metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(ups_info_line);
         // UPS vars
         for (var, val) in vars.iter() {
             if let Some(metrics) = VAR_METRICS.get(var.as_str()) {
                 for metric in metrics {
-                    if let Some(var_line) = print_basic_var_metric(&ups, &val, &metric) {
+                    if let Some(var_line) = print_basic_var_metric(ups, val, metric) {
                         metric_lines.get_mut(metric.metric).unwrap().push(var_line);
                     }
                 }
@@ -36,7 +36,7 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     for metric in METRICS.values() {
         if let Some(lines) = metric_lines.get(metric.metric) {
             if !lines.is_empty() {
-                builder.push_str(&print_metric_info(&metric));
+                builder.push_str(&print_metric_info(metric));
                 builder.push_str(&lines.concat());
             }
         }

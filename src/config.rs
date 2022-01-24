@@ -23,7 +23,6 @@ pub fn read_config() -> Config {
         print_metrics_and_exit: Config::DEFAULT_PRINT_METRICS_AND_EXIT,
     };
 
-
     if let Ok(http_address_str) = std::env::var("HTTP_ADDRESS") {
         if let Ok(http_address) = http_address_str.parse::<IpAddr>() {
             config.http_address = http_address;
