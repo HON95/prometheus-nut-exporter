@@ -12,7 +12,7 @@ use crate::config::Config;
 use crate::nut_client::scrape_nut_to_openmetrics;
 
 pub async fn run_server(config: Config) {
-    let endpoint = SocketAddr::new(config.http_ip, config.http_port);
+    let endpoint = SocketAddr::new(config.http_address, config.http_port);
     let service_maker = make_service_fn(move |conn:  &AddrStream| {
         let config = config.clone();
         let remote_addr = conn.remote_addr();
