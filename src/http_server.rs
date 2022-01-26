@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
-use std::net::{IpAddr, Ipv6Addr, SocketAddr};
+use std::net::{SocketAddr};
 
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use hyper::service::{make_service_fn, service_fn};
@@ -12,7 +12,7 @@ use crate::config::Config;
 use crate::nut_client::scrape_nut_to_openmetrics;
 
 pub async fn run_server(config: Config) {
-    let endpoint = SocketAddr::new(IpAddr::V6(Ipv6Addr::UNSPECIFIED), config.http_port);
+    let endpoint = SocketAddr::new(config.http_address, config.http_port);
     let service_maker = make_service_fn(move |conn:  &AddrStream| {
         let config = config.clone();
         let remote_addr = conn.remote_addr();
