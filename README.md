@@ -111,44 +111,49 @@ Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
 | `nut_ups_info` |  |  | Metadata about the UPS (e.g. model, battery type, location). |
 | `nut_status` | `ups.status` |  | UPS status. Unknown (0), on line (1, "OL"), on battery (2, "OB"), or low battery (3, "LB"). |
 | `nut_beeper_status` | `ups.beeper.status` |  | If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3). |
-| `nut_uptime_seconds` | `device.uptime` | `s` | Device uptime. |
+| `nut_uptime_seconds` | `device.uptime` | `seconds` | Device uptime. |
 | `nut_load` | `ups.load` |  | Load. (0-1) |
-| `nut_temperature_celsius` | `ups.temperature` | `degrees C` | UPS temperature. |
+| `nut_temperature_celsius` | `ups.temperature` | `degrees C` | UPS temperature |
 | `nut_battery_charge` | `battery.charge` |  | Battery level. (0-1) |
 | `nut_battery_charge_low` | `battery.charge.low` |  | Battery level threshold for low state. (0-1) |
 | `nut_battery_charge_warning` | `battery.charge.warning` |  | Battery level threshold for warning state. (0-1) |
 | `nut_battery_charge_restart` | `battery.charge.restart` |  | Battery level threshold for restarting after power-off. (0-1) |
-| `nut_battery_runtime_seconds` | `battery.runtime` | `s` | Battery runtime. |
-| `nut_battery_runtime_low_seconds` | `battery.runtime.low` | `s` | Battery runtime threshold for state low. |
-| `nut_battery_runtime_restart_seconds` | `battery.runtime.restart` | `s` | Battery runtime threshold for restart after power-off. |
-| `nut_battery_voltage_volts` | `battery.voltage` | `V` | Battery voltage. |
-| `nut_battery_voltage_nominal_volts` | `battery.voltage.nominal` | `V` | Battery voltage (nominal). |
+| `nut_battery_runtime_seconds` | `battery.runtime` | `seconds` | Battery runtime. |
+| `nut_battery_runtime_low_seconds` | `battery.runtime.low` | `seconds` | Battery runtime threshold for state low. |
+| `nut_battery_runtime_restart_seconds` | `battery.runtime.restart` | `seconds` | Battery runtime threshold for restart after power-off. |
+| `nut_delay_shutdown_seconds` | `ups.delay.shutdown` | `seconds` | Interval to wait after shutdown with delay command. |
+| `nut_delay_start_seconds` | `ups.delay.start` | `seconds` | Interval to wait before (re)starting the load. |
+| `nut_battery_voltage_volts` | `battery.voltage` | `volts` | Battery voltage. |
+| `nut_battery_voltage_nominal_volts` | `battery.voltage.nominal` | `volts` | Battery voltage (nominal). |
+| `nut_battery_voltage_high_volts` | `battery.voltage.high` | `volts` | Battery voltage for full (charge level calculation). |
+| `nut_battery_voltage_low_volts` | `battery.voltage.low` | `volts` | Battery voltage for empty (charge level calculation). |
 | `nut_battery_temperature_celsius` | `battery.temperature` | `degrees C` | Battery temperature. |
-| `nut_input_voltage_volts` | `input.voltage` | `V` | Input voltage. |
-| `nut_input_voltage_nominal_volts` | `input.voltage.nominal` | `V` | Input voltage (nominal). |
-| `nut_input_voltage_minimum_volts` | `input.voltage.minimum` | `V` | Input voltage (minimum seen). |
-| `nut_input_voltage_maximum_volts` | `input.voltage.maximum` | `V` | Input voltage (maximum seen). |
-| `nut_input_transfer_low_volts` | `input.transfer.low` | `V` | Input lower transfer threshold. |
-| `nut_input_transfer_high_volts` | `input.transfer.high` | `V` | Input upper transfer threshold. |
-| `nut_input_current_amperes` | `input.current` | `A` | Input current. |
-| `nut_input_current_nominal_amperes` | `input.current.nominal` | `A` | Input current (nominal). |
-| `nut_input_frequency_hertz` | `input.frequency` | `Hz` | Input frequency. |
-| `nut_input_frequency_nominal_hertz` | `input.frequency.nominal` | `Hz` | Input frequency (nominal). |
-| `nut_input_frequency_low_hertz` | `input.frequency.low` | `Hz` | Input frequency (low). |
-| `nut_input_frequency_high_hertz` | `input.frequency.high` | `Hz` | Input frequency (high). |
-| `nut_output_voltage_volts` | `output.voltage` | `V` | Output voltage. |
-| `nut_output_voltage_nominal_volts` | `output.voltage.nominal` | `V` | Output voltage (nominal). |
-| `nut_output_current_amperes` | `output.current` | `A` | Output current. |
-| `nut_output_current_nominal_amperes` | `output.current.nominal` | `A` | Output current (nominal). |
-| `nut_output_frequency_hertz` | `output.frequency` | `Hz` | Output frequency. |
-| `nut_output_frequency_nominal_hertz` | `output.frequency.nominal` | `Hz` | Output frequency (nominal). |
-| `nut_power_watts` | `ups.power` | `W` | Apparent power. |
-| `nut_power_nominal_watts` | `ups.power.nominal` | `W` | Apparent power (nominal). |
-| `nut_real_power_watts` | `ups.realpower` | `W` | Real power. |
-| `nut_real_power_nominal_watts` | `ups.realpower.nominal` | `W` | Real power (nominal). |
-| `nut_battery_volts` | `battery.voltage` | `V` | Battery voltage. (Compatibility metric, use nut_battery_voltage_volts instead.) |
-| `nut_input_volts` | `input.voltage` | `V` | Input voltage. (Compatibility metric, use nut_input_voltage_volts instead.) |
-| `nut_output_volts` | `output.voltage` | `V` | Output voltage. (Compatibility metric, use nut_output_voltage_volts instead.) |
+| `nut_input_voltage_volts` | `input.voltage` | `volts` | Input voltage. |
+| `nut_input_voltage_nominal_volts` | `input.voltage.nominal` | `volts` | Input voltage (nominal). |
+| `nut_input_voltage_minimum_volts` | `input.voltage.minimum` | `volts` | Input voltage (minimum seen). |
+| `nut_input_voltage_maximum_volts` | `input.voltage.maximum` | `volts` | Input voltage (maximum seen). |
+| `nut_input_transfer_low_volts` | `input.transfer.low` | `volts` | Input lower transfer threshold. |
+| `nut_input_transfer_high_volts` | `input.transfer.high` | `volts` | Input upper transfer threshold. |
+| `nut_input_current_amperes` | `input.current` | `amperes` | Input current. |
+| `nut_input_current_nominal_amperes` | `input.current.nominal` | `amperes` | Input current (nominal). |
+| `nut_input_frequency_hertz` | `input.frequency` | `hertz` | Input frequency. |
+| `nut_input_frequency_nominal_hertz` | `input.frequency.nominal` | `hertz` | Input frequency (nominal). |
+| `nut_input_frequency_low_hertz` | `input.frequency.low` | `hertz` | Input frequency (low). |
+| `nut_input_frequency_high_hertz` | `input.frequency.high` | `hertz` | Input frequency (high). |
+| `nut_output_voltage_volts` | `output.voltage` | `volts` | Output voltage. |
+| `nut_output_voltage_nominal_volts` | `output.voltage.nominal` | `volts` | Output voltage (nominal). |
+| `nut_output_current_amperes` | `output.current` | `amperes` | Output current. |
+| `nut_output_current_nominal_amperes` | `output.current.nominal` | `amperes` | Output current (nominal). |
+| `nut_output_frequency_hertz` | `output.frequency` | `hertz` | Output frequency. |
+| `nut_output_frequency_nominal_hertz` | `output.frequency.nominal` | `hertz` | Output frequency (nominal). |
+| `nut_power_watts` | `ups.power` | `watts` | Apparent power. |
+| `nut_power_nominal_watts` | `ups.power.nominal` | `watts` | Apparent power (nominal). |
+| `nut_real_power_watts` | `ups.realpower` | `watts` | Real power. |
+| `nut_real_power_nominal_watts` | `ups.realpower.nominal` | `watts` | Real power (nominal). |
+| `nut_battery_volts` | `battery.voltage` | `volts` | Battery voltage. (Compatibility metric, use nut_battery_voltage_volts instead.) |
+| `nut_input_volts` | `input.voltage` | `volts` | Input voltage. (Compatibility metric, use nut_input_voltage_volts instead.) |
+| `nut_output_volts` | `output.voltage` | `volts` | Output voltage. (Compatibility metric, use nut_output_voltage_volts instead.) |
+
 
 (Generated by setting `PRINT_METRICS_AND_EXIT=true`.)
 

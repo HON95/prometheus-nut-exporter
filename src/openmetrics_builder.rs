@@ -82,6 +82,11 @@ fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
     attributes.insert("model", vars.get("device.model").unwrap_or(&empty_str));
     attributes.insert("battery_type", vars.get("battery.type").unwrap_or(&empty_str));
     attributes.insert("driver", vars.get("driver.name").unwrap_or(&empty_str));
+    attributes.insert("nut_version", vars.get("driver.version").unwrap_or(&empty_str));
+    attributes.insert("usb_vendor_id", vars.get("ups.vendorid").unwrap_or(&empty_str));
+    attributes.insert("usb_product_id", vars.get("ups.productid").unwrap_or(&empty_str));
+    attributes.insert("ups_firmware", vars.get("ups.firmware").unwrap_or(&empty_str));
+    attributes.insert("ups_type", vars.get("ups.type").unwrap_or(&empty_str));
 
     let mut labels = String::new();
     for (key, value) in attributes {
