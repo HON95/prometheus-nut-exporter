@@ -130,6 +130,15 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
                 "OL" => 1f64,
                 "OB" => 2f64,
                 "LB" => 3f64,
+                "RB" => 4f64,
+                _ => 0f64,
+            };
+        },
+        VarTransform::BatteryHealth => {
+            // Remove stuff we don't care about
+            let value_start = value.splitn(2, ' ').next().unwrap();
+            result_value = match value_start {
+                "RB" => 1f64,
                 _ => 0f64,
             };
         },

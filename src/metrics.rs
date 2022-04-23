@@ -14,6 +14,7 @@ pub enum VarTransform {
     Percent,
     BeeperStatus,
     UpsStatus,
+    BatteryHealth,
 }
 
 #[derive(Debug, Clone)]
@@ -53,7 +54,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
 };
 
-pub static BASIC_METRICS: [Metric; 44] = [
+pub static BASIC_METRICS: [Metric; 45] = [
     // Status, uptime, load
     Metric {
         metric: "nut_status",
@@ -96,6 +97,14 @@ pub static BASIC_METRICS: [Metric; 44] = [
         var_transform: VarTransform::None,
     },
     // Battery
+    Metric {
+        metric: "nut_battery_health",
+        help: "Bettery status. Healthy (0), replace battery (1, \"RB\").",
+        type_: "gauge",
+        unit: "",
+        nut_var: "ups.status",
+        var_transform: VarTransform::BatteryHealth,
+    },
     Metric {
         metric: "nut_battery_charge",
         help: "Battery level. (0-1)",
