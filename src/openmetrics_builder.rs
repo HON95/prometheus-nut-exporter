@@ -133,6 +133,14 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
                 _ => 0f64,
             };
         },
+        VarTransform::BatteryHealth => {
+            // Remove stuff we don't care about
+            let value_start = value.splitn(2, ' ').next().unwrap();
+            result_value = match value_start {
+                "RB" => 1f64,
+                _ => 0f64,
+            };
+        },
     }
 
     Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=ups, value=result_value))
