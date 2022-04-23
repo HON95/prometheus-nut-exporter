@@ -130,7 +130,6 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
                 "OL" => 1f64,
                 "OB" => 2f64,
                 "LB" => 3f64,
-                "RB" => 4f64,
                 _ => 0f64,
             };
         },
