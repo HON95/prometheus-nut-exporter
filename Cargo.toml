@@ -7,7 +7,7 @@ description = "A Prometheus exporter for Network UPS Tools (NUT)."
 keywords = ["prometheus", "openmetrics", "nut", "exporter"]
 homepage = "https://github.com/HON95/prometheus-nut-exporter"
 repository = "https://github.com/HON95/prometheus-nut-exporter"
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 hyper = { version = "0.14.*", features = ["full"] }
