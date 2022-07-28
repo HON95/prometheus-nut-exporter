@@ -15,77 +15,77 @@ env:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-    - name: Add dependencies
-      run: rustup component add clippy
-    - name: Build
-      run: cargo build --verbose
-    - name: Check code
-      run: manage/check.sh
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Add dependencies
+        run: rustup component add clippy
+      - name: Build
+        run: cargo build --verbose
+      - name: Check code
+        run: manage/check.sh
 
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     needs: check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Update version
-      run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{secrets.DOCKER_USERNAME}}
-        password: ${{secrets.DOCKER_PASSWORD}}
-    - name: Push to Docker Hub
-      uses: docker/build-push-action@v2
-      with:
-        build-args: |
-          APP_VERSION=${{env.version}}
-        tags: |
-          ${{env.DOCKER_REPO}}:latest
-          ${{env.DOCKER_REPO}}:bleeding
-        push: true
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Update version
+        run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            APP_VERSION=${{ env.version }}
+          tags: |
+            ${{ env.DOCKER_REPO }}:latest
+            ${{ env.DOCKER_REPO }}:bleeding
+          push: true
 
   publish-stable:
     if: github.event_name == 'release' && github.event.action == 'published' && startsWith(github.ref, 'refs/tags/v')
     needs: check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    - name: Extract version
-      run: |
-        # Get version from git tag
-        VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
-        echo "version=$VERSION" | tee -a $GITHUB_ENV
-        # Check if semantic version (3 numbers, ignore pre-release and metadata)
-        echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
-        # Extract other version representations
-        echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
-        echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
-        echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
-    - name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{secrets.DOCKER_USERNAME}}
-        password: ${{secrets.DOCKER_PASSWORD}}
-    - name: Push to Docker Hub
-      uses: docker/build-push-action@v2
-      with:
-        build-args: |
-          APP_VERSION=${{env.version}}
-        tags: |
-          ${{env.DOCKER_REPO}}:latest
-          ${{env.DOCKER_REPO}}:${{env.version_major}}
-          ${{env.DOCKER_REPO}}:${{env.version_minor}}
-          ${{env.DOCKER_REPO}}:${{env.version_patch}}
-          ${{env.DOCKER_REPO}}:stable
-        push: true
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Extract version
+        run: |
+          # Get version from git tag
+          VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
+          echo "version=$VERSION" | tee -a $GITHUB_ENV
+          # Check if semantic version (3 numbers, ignore pre-release and metadata)
+          echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
+          # Extract other version representations
+          echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
+          echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
+          echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          build-args: |
+            APP_VERSION=${{ env.version }}
+          tags: |
+            ${{ env.DOCKER_REPO }}:latest
+            ${{ env.DOCKER_REPO }}:${{ env.version_major }}
+            ${{ env.DOCKER_REPO }}:${{ env.version_minor }}
+            ${{ env.DOCKER_REPO }}:${{ env.version_patch }}
+            ${{ env.DOCKER_REPO }}:stable
+          push: true
