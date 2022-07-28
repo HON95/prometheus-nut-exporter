@@ -93,7 +93,7 @@ resources:
 
 ### Docker Image Versions
 
-Use `1` for stable v1.Y.Z releases and `latest` for bleeding/unstable releases.
+Use e.g. `1` for stable v1.y.z releases and `latest` for bleeding/dev/unstable releases.
 
 ### Environment Variables
 
