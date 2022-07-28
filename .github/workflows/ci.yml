@@ -25,6 +25,8 @@ jobs:
         run: cargo build --verbose
       - name: Check code
         run: manage/check.sh
+      - name: Run integration test
+        run: manage/integration_test.sh
 
   publish-bleeding:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
