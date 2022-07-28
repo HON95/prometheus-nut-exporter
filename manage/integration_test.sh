@@ -21,7 +21,7 @@ trap teardown EXIT
 sleep 1
 
 # Scrape
-scrape_content=$(curl -sSf "http://localhost:99951/nut?target=localhost:3493")
+scrape_content=$(curl -sSf "http://localhost:9995/nut?target=localhost:3493")
 if [[ $? != 0 ]]; then
     echo "Failure!"
     echo "Scrape failed."
