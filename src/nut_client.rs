@@ -63,7 +63,7 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
                 *nut_version = captures["version"].to_owned();
             },
             None => {
-                return Err("Failed get NUT version from NUT query.".into());
+                return Err("Failed get NUT version from NUT query. Not a NUT server?".into());
             },
         }
     }

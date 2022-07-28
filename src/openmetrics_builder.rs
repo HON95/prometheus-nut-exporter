@@ -1,3 +1,4 @@
+use std::fmt::Write as _;
 use std::collections::HashMap;
 
 use crate::meta::APP_VERSION;
@@ -48,12 +49,12 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
 fn print_metric_info(metric: &Metric) -> String {
     let mut builder: String = String::new();
     if !metric.nut_var.is_empty() {
-        builder.push_str(&format!("# HELP {} {} (\"{}\")\n", metric.metric, metric.help, metric.nut_var));
+        let _ = writeln!(builder, "# HELP {} {} (\"{}\")", metric.metric, metric.help, metric.nut_var);
     } else {
-        builder.push_str(&format!("# HELP {} {}\n", metric.metric, metric.help));
+        let _ = writeln!(builder, "# HELP {} {}", metric.metric, metric.help);
     }
-    builder.push_str(&format!("# TYPE {} {}\n", metric.metric, metric.type_));
-    builder.push_str(&format!("# UNIT {} {}\n", metric.metric, metric.unit));
+    let _ = writeln!(builder, "# TYPE {} {}", metric.metric, metric.type_);
+    let _ = writeln!(builder, "# UNIT {} {}", metric.metric, metric.unit);
 
     builder
 }
@@ -93,47 +94,46 @@ fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
         if !labels.is_empty() {
             labels.push(',');
         }
-        labels.push_str(&format!("{}=\"{}\"", key, value));
+        let _ = write!(labels, "{}=\"{}\"", key, value);
     }
 
     format!("{}{{{}}} 1\n",metric.metric, labels)
 }
 
 fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {
-    let result_value: f64;
-    match metric.var_transform {
+    let result_value: f64 = match metric.var_transform {
         VarTransform::None => {
-            result_value = match value.parse::<f64>() {
+            match value.parse::<f64>() {
                 Ok(val) => val,
                 Err(_) => return None,
-            };
+            }
         },
         VarTransform::Percent => {
             let num_value = match value.parse::<f64>() {
                 Ok(val) => val,
                 Err(_) => return None,
             };
-            result_value = num_value / 100f64;
+            num_value / 100f64
         },
         VarTransform::BeeperStatus => {
-            result_value = match value {
+            match value {
                 "enabled" => 1f64,
                 "disabled" => 2f64,
                 "muted" => 3f64,
                 _ => 0f64,
-            };
+            }
         },
         VarTransform::UpsStatus => {
-            // Remove stuff we don't care about
+            // Remove the second component if present ("LB" etc.)
             let value_start = value.split_once(' ').map_or(value, |x| x.0);
-            result_value = match value_start {
+            match value_start {
                 "OL" => 1f64,
                 "OB" => 2f64,
                 "LB" => 3f64,
                 _ => 0f64,
-            };
+            }
         },
-    }
+    };
 
     Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=ups, value=result_value))
 }

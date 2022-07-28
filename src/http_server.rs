@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::fmt::Write as _;
 use std::net::{SocketAddr};
 
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
@@ -64,9 +65,9 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
 
 fn endpoint_home(config: &Config) -> Response<Body> {
     let mut content = String::new();
-    content.push_str(&format!("{} version {} by {}.\n", APP_NAME, APP_VERSION, APP_AUTHOR));
-    content.push('\n');
-    content.push_str(&format!("Usage: {}?target=<target>\n", config.http_path));
+    let _ = writeln!(content, "{} version {} by {}.", APP_NAME, APP_VERSION, APP_AUTHOR);
+    let _ = writeln!(content);
+    let _ = writeln!(content, "Usage: {}?target=<target>", config.http_path);
 
     let mut response = Response::new(Body::empty());
     *response.body_mut()= Body::from(content.into_bytes());
@@ -107,7 +108,7 @@ async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>)
             },
         }
     } else {
-        content.push_str(&format!("Missing target.\n\nUsage: {}?target=<target>\n", config.http_path));
+        let _ = writeln!(content, "Missing target.\n\nUsage: {}?target=<target>", config.http_path);
         status = StatusCode::BAD_REQUEST;
     }
 
