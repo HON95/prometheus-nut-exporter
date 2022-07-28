@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Changed default log level to `info`.
+- Made the target port default to 3493 instead of requiring one to be provided.
+
 ### Deprecated
 
 ### Removed
