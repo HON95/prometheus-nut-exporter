@@ -6,13 +6,10 @@ mod metrics;
 mod nut_client;
 mod openmetrics_builder;
 
-// Set env var RUST_LOG to override
-pub const LOG_LEVEL_DEFAULT: &str = "info";
-
 #[tokio::main]
 async fn main() {
     // Setup logger
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(LOG_LEVEL_DEFAULT)).init();
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(config::Config::DEFAULT_LOG_LEVEL)).init();
 
     // Setup config
     let config = config::read_config();

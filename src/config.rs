@@ -9,6 +9,9 @@ pub struct Config {
 }
 
 impl Config {
+    pub const DEFAULT_LOG_LEVEL: &'static str = "info";
+    pub const DEFAULT_NUT_PORT: u16 = 3493;
+
     const DEFAULT_HTTP_ADDRESS: IpAddr = IpAddr::V6(Ipv6Addr::UNSPECIFIED);
     const DEFAULT_HTTP_PORT: u16 = 9995;
     const DEFAULT_HTTP_PATH: &'static str = "/nut";

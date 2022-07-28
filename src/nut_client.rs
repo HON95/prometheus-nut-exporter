@@ -20,6 +20,7 @@ enum NutQueryListState {
 }
 
 pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn Error>> {
+    log::trace!("Connecting to NUT server: {}", target);
     let raw_stream = match TcpStream::connect(target).await {
         Ok(val) => val,
         Err(err) => return Err(format!("Failed to connect to target: {}", err).into()),
@@ -48,9 +49,8 @@ async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMa
 }
 
 async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> ErrorResult<()> {
-    const RAW_VERSION_PATTERN: &str = r#"upsd (?P<version>.+) -"#;
     lazy_static! {
-        static ref VERSION_PATTERN: Regex = Regex::new(RAW_VERSION_PATTERN).unwrap();
+        static ref VERSION_PATTERN: Regex = Regex::new(r#"upsd (?P<version>.+) -"#).unwrap();
     }
 
     stream.write_all(b"VER\n").await?;
@@ -72,9 +72,8 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
 }
 
 async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    const RAW_UPS_PATTERN: &str = r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#;
     lazy_static! {
-        static ref UPS_PATTERN: Regex = Regex::new(RAW_UPS_PATTERN).unwrap();
+        static ref UPS_PATTERN: Regex = Regex::new(r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#).unwrap();
     }
 
     let line_consumer = |line: &str| {
@@ -101,9 +100,8 @@ async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMa
 }
 
 async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
     lazy_static! {
-        static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
+        static ref VAR_PATTERN: Regex = Regex::new(r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#).unwrap();
     }
 
     for (ups, vars) in upses.iter_mut() {
