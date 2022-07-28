@@ -9,6 +9,9 @@ pub struct Config {
 }
 
 impl Config {
+    pub const DEFAULT_LOG_LEVEL: &'static str = "info";
+    pub const DEFAULT_NUT_PORT: u16 = 3493;
+
     const DEFAULT_HTTP_ADDRESS: IpAddr = IpAddr::V6(Ipv6Addr::UNSPECIFIED);
     const DEFAULT_HTTP_PORT: u16 = 9995;
     const DEFAULT_HTTP_PATH: &'static str = "/nut";
@@ -22,7 +25,6 @@ pub fn read_config() -> Config {
         http_path: Config::DEFAULT_HTTP_PATH.to_owned(),
         print_metrics_and_exit: Config::DEFAULT_PRINT_METRICS_AND_EXIT,
     };
-
 
     if let Ok(http_address_str) = std::env::var("HTTP_ADDRESS") {
         if let Ok(http_address) = http_address_str.parse::<IpAddr>() {

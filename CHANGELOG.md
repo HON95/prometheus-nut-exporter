@@ -8,13 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added metrics (@uncleBorsch):
+    - `nut_temperature_celsius` (`ups.temperature`)
+    - `nut_delay_shutdown_seconds` (`ups.delay.shutdown`)
+    - `nut_delay_start_seconds` (`ups.delay.start`)
+    - `nut_battery_voltage_high_volts` (`battery.voltage.high`)
+    - `nut_battery_voltage_low_volts` (`battery.voltage.low`)
+- Added more UPS metadata (@uncleBorsch).
+- Added support for binding to a specific IP address through the `HTTP_ADDRESS` environment variable (@nsapa).
+
 ### Changed
+
+- Changed default log level to `info`.
+- Made the target port default to 3493 instead of requiring one to be provided.
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Fixed typo in `device.mfr` variable (@nsapa).
 
 ### Security
 

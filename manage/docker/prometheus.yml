@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: "nut"
     static_configs:
       # NUT server
-      - targets: ["manus:3493"]
+      - targets: ["localhost:3493"]
     metrics_path: /nut
     relabel_configs:
       - source_labels: [__address__]
@@ -15,4 +15,4 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         # NUT exporter
-        replacement: nut-exporter:9995
+        replacement: localhost:9995

@@ -1,10 +1,13 @@
 use std::collections::HashMap;
 use std::convert::Infallible;
+use std::fmt::Write as _;
 use std::net::{SocketAddr};
 
 use hyper::{Body, Method, Request, Response, Server, StatusCode};
 use hyper::service::{make_service_fn, service_fn};
 use hyper::server::conn::AddrStream;
+use lazy_static::lazy_static;
+use regex::Regex;
 use url::form_urlencoded;
 
 use crate::meta::{APP_NAME, APP_AUTHOR, APP_VERSION};
@@ -34,8 +37,6 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
     log::trace!("HTTP request from: {}", remote_addr);
     log::trace!("HTTP request URL: {}", request.uri().path());
 
-    let query_args: HashMap<String, String> = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes()).into_owned().collect();
-
     let metrics_path = &config.http_path;
     let is_method_get = request.method() == Method::GET;
     let path = request.uri().path();
@@ -48,7 +49,7 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
         }
     } else if path == metrics_path {
         if is_method_get {
-            response = endpoint_metrics(&config, &query_args).await;
+            response = endpoint_metrics(&config, &request).await;
         } else {
             response = endpoint_method_not_allowed();
         }
@@ -64,56 +65,64 @@ async fn entrypoint(config: Config, request: Request<Body>, remote_addr: SocketA
 
 fn endpoint_home(config: &Config) -> Response<Body> {
     let mut content = String::new();
-    content.push_str(&format!("{} version {} by {}.\n", APP_NAME, APP_VERSION, APP_AUTHOR));
-    content.push('\n');
-    content.push_str(&format!("Usage: {}?target=<target>\n", config.http_path));
+    let _ = writeln!(content, "{} version {} by {}.", APP_NAME, APP_VERSION, APP_AUTHOR);
+    let _ = writeln!(content);
+    let _ = writeln!(content, "Usage: {}?target=<target>", config.http_path);
 
-    let mut response = Response::new(Body::empty());
-    *response.body_mut()= Body::from(content.into_bytes());
-
-    response
+    Response::builder().status(StatusCode::OK).body(Body::from(content)).unwrap()
 }
 
 fn endpoint_not_found() -> Response<Body> {
-    let mut response = Response::new(Body::from("Not found\n"));
-    *response.status_mut() = StatusCode::NOT_FOUND;
-
-    response
+    Response::builder().status(StatusCode::NOT_FOUND).body(Body::from("Not found\n")).unwrap()
 }
 
 fn endpoint_method_not_allowed() -> Response<Body> {
-    let mut response = Response::new(Body::from("Method not allowed\n"));
-    *response.status_mut() = StatusCode::METHOD_NOT_ALLOWED;
-
-    response
+    Response::builder().status(StatusCode::METHOD_NOT_ALLOWED).body(Body::from("Method not allowed\n")).unwrap()
 }
 
-async fn endpoint_metrics(config: &Config, query_args: &HashMap<String, String>) -> Response<Body> {
-    let empty_str = "".to_owned();
-    let target = query_args.get("target").unwrap_or(&empty_str);
+async fn endpoint_metrics(config: &Config, request: &Request<Body>) -> Response<Body> {
+    let usage_message = format!("Usage: {}?target=<target>", config.http_path);
+    let target = match parse_target(request) {
+        Ok(target) => target,
+        Err(err_message) => return Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from(format!("{}\n\n{}", err_message, usage_message))).unwrap(),
+    };
 
-    let mut content = String::new();
-    let mut status = StatusCode::OK;
+    let (status, content) = match scrape_nut_to_openmetrics(&target).await {
+        Ok(result) => {
+            (StatusCode::OK, result)
+        },
+        Err(error) => {
+            (StatusCode::SERVICE_UNAVAILABLE, error.to_string())
+        },
+    };
 
-    if !target.is_empty() {
-        let result_res = scrape_nut_to_openmetrics(target).await;
-        match result_res {
-            Ok(result) => {
-                content.push_str(result.as_str());
-            },
-            Err(error) => {
-                content.push_str(error.to_string().as_str());
-                status = StatusCode::SERVICE_UNAVAILABLE;
-            },
-        }
-    } else {
-        content.push_str(&format!("Missing target.\n\nUsage: {}?target=<target>\n", config.http_path));
-        status = StatusCode::BAD_REQUEST;
+    Response::builder().status(status).body(Body::from(content)).unwrap()
+}
+
+fn parse_target(request: &Request<Body>) -> Result<String, &str> {
+    lazy_static! {
+        // Match domain, IPv4 address or IPv6 addres, with optional port number
+        static ref TARGET_PATTERN: Regex = Regex::new(r#"^(?P<host>\[[^\]]+\]|[^:]+)(?::(?P<port>[0-9]+))?$"#).unwrap();
     }
 
-    let mut response = Response::new(Body::empty());
-    *response.body_mut() = Body::from(content.into_bytes());
-    *response.status_mut() = status;
+    let query_args: HashMap<String, String> = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes()).into_owned().collect();
+    let target_raw = match query_args.get("target") {
+        Some(target_raw) => target_raw,
+        None => return Err("Missing target."),
+    };
 
-    response
+    let default_port = Config::DEFAULT_NUT_PORT.to_string();
+    let target = match TARGET_PATTERN.captures(target_raw) {
+        Some(captures) => {
+            let host = captures.name("host").unwrap().as_str();
+            let port = match captures.name("port") {
+                Some(port) => port.as_str(),
+                None => default_port.as_str(),
+            };
+            format!("{}:{}", host, port)
+        },
+        None => return Err("Malformed list element for VAR list query."),
+    };
+
+    Ok(target)
 }

@@ -20,6 +20,7 @@ enum NutQueryListState {
 }
 
 pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn Error>> {
+    log::trace!("Connecting to NUT server: {}", target);
     let raw_stream = match TcpStream::connect(target).await {
         Ok(val) => val,
         Err(err) => return Err(format!("Failed to connect to target: {}", err).into()),
@@ -36,21 +37,20 @@ pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn E
     Ok(content)
 }
 
-async fn scrape_nut_upses(mut stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
+async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
     let mut upses: UpsVarMap = HashMap::new();
     let mut nut_version: NutVersion = "".to_owned();
 
-    query_nut_version(&mut stream, &mut nut_version).await?;
-    query_nut_upses(&mut stream, &mut upses).await?;
-    query_nut_vars(&mut stream, &mut upses).await?;
+    query_nut_version(stream, &mut nut_version).await?;
+    query_nut_upses(stream, &mut upses).await?;
+    query_nut_vars(stream, &mut upses).await?;
 
     Ok((upses, nut_version))
 }
 
 async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut NutVersion) -> ErrorResult<()> {
-    const RAW_VERSION_PATTERN: &str = r#"upsd (?P<version>.+) -"#;
     lazy_static! {
-        static ref VERSION_PATTERN: Regex = Regex::new(RAW_VERSION_PATTERN).unwrap();
+        static ref VERSION_PATTERN: Regex = Regex::new(r#"upsd (?P<version>.+) -"#).unwrap();
     }
 
     stream.write_all(b"VER\n").await?;
@@ -63,7 +63,7 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
                 *nut_version = captures["version"].to_owned();
             },
             None => {
-                return Err("Failed get NUT version from NUT query.".into());
+                return Err("Failed get NUT version from NUT query. Not a NUT server?".into());
             },
         }
     }
@@ -71,14 +71,13 @@ async fn query_nut_version(stream: &mut BufReader<TcpStream>, nut_version: &mut 
     Ok(())
 }
 
-async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    const RAW_UPS_PATTERN: &str = r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#;
+async fn query_nut_upses(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     lazy_static! {
-        static ref UPS_PATTERN: Regex = Regex::new(RAW_UPS_PATTERN).unwrap();
+        static ref UPS_PATTERN: Regex = Regex::new(r#"^UPS\s+(?P<ups>[\S]+)\s+"(?P<desc>[^"]*)"$"#).unwrap();
     }
 
     let line_consumer = |line: &str| {
-        let captures_opt = UPS_PATTERN.captures(&line);
+        let captures_opt = UPS_PATTERN.captures(line);
         match captures_opt {
             Some(captures) => {
                 let ups = captures["ups"].to_owned();
@@ -95,20 +94,19 @@ async fn query_nut_upses(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsV
         Ok(())
     };
 
-    query_nut_list(&mut stream, "LIST UPS", line_consumer).await?;
+    query_nut_list(stream, "LIST UPS", line_consumer).await?;
 
     Ok(())
 }
 
-async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
-    const RAW_VAR_PATTERN: &str = r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#;
+async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap) -> ErrorResult<()> {
     lazy_static! {
-        static ref VAR_PATTERN: Regex = Regex::new(RAW_VAR_PATTERN).unwrap();
+        static ref VAR_PATTERN: Regex = Regex::new(r#"^VAR\s+(?P<ups>[\S]+)\s+(?P<var>[\S]+)\s+"(?P<val>[^"]*)"$"#).unwrap();
     }
 
     for (ups, vars) in upses.iter_mut() {
         let line_consumer = |line: &str| {
-            let captures_opt = VAR_PATTERN.captures(&line);
+            let captures_opt = VAR_PATTERN.captures(line);
             match captures_opt {
                 Some(captures) => {
                     let variable = captures["var"].to_owned();
@@ -123,7 +121,7 @@ async fn query_nut_vars(mut stream: &mut BufReader<TcpStream>, upses: &mut UpsVa
             Ok(())
         };
 
-        query_nut_list(&mut stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
+        query_nut_list(stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
     }
 
     Ok(())
@@ -159,8 +157,8 @@ async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query: &str, mut l
         // End of list
         if line.starts_with("END ") {
             if query_state == NutQueryListState::Begun {
-                query_state = NutQueryListState::Ended;
                 // End list
+                query_state = NutQueryListState::Ended;
                 break;
             } else {
                 // Wrong order

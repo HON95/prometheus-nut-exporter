@@ -422,7 +422,7 @@ lazy_static! {
         map.insert(NUT_INFO_METRIC.metric, &NUT_INFO_METRIC);
         map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
         for metric in BASIC_METRICS.iter() {
-            map.insert(metric.metric, &metric);
+            map.insert(metric.metric, metric);
         }
 
         map
@@ -432,7 +432,7 @@ lazy_static! {
     pub static ref VAR_METRICS: HashMap<&'static str, Vec<&'static Metric>> = {
         let mut map: HashMap<&'static str, Vec<&'static Metric>> = HashMap::new();
         for metric in BASIC_METRICS.iter() {
-            map.entry(metric.nut_var).or_insert_with(Vec::new).push(&metric);
+            map.entry(metric.nut_var).or_insert_with(Vec::new).push(metric);
         }
 
         map
