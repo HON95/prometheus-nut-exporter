@@ -56,4 +56,23 @@
 
 Feel free to suggest adding more metrics (including a printout of what the variable and value looks like for your UPS)!
 
+## UPS Status
+
+The `nut_ups_status` metric family describes a set of statuses, specified in the `status` label. The meanings of the different statuses is shown below.
+
+| Status | Description |
+| - | - |
+| `OL` | Online |
+| `OB` | On battery |
+| `LB` | Low battery (critical) |
+| `CHRG` | Charging |
+| `RB` | Replace battery |
+| `FSD` | Forced shutdown |
+| `BYPASS` | Battery bypass |
+| `SD` | Shutdown |
+| `CP` | Cable power |
+| `OFF` | Off |
+
+## Miscellanea
+
 To check if a specific UPS is unavailable, use something like: `absent(nut_status{job="...", ups="..."})`
