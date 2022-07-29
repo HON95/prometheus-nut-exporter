@@ -7,7 +7,7 @@
 
 ![Dashboard](https://grafana.com/api/dashboards/14371/images/10335/image)
 
-A Prometheus exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
+A Prometheus/OpenMetrics exporter for uninterruptable power supplies (UPSes) using Network UPS Tools (NUT).
 
 ## Usage
 

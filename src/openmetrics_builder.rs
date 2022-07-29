@@ -1,8 +1,8 @@
 use std::fmt::Write as _;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
+use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UPS_STATUS_ELEMENTS, UPS_STATUS_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
 
 pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String {
     // Use vec for stable ordering of metrics within a metric family
@@ -16,8 +16,8 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
         // UPS metadata
-        let ups_info_line = print_ups_info_metric(ups, vars);
-        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(ups_info_line);
+        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(print_ups_info_metric(ups, vars));
+        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().append(&mut print_ups_status_metrics(ups, vars));
         // UPS vars
         for (var, val) in vars.iter() {
             if let Some(metrics) = VAR_METRICS.get(var.as_str()) {
@@ -88,19 +88,43 @@ fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
 
     add_var_label("description", UPS_DESCRIPTION_PSEUDOVAR);
     add_var_label("description2", "device.description");
+    add_var_label("device_type", "device.type");
     add_var_label("location", "device.location");
-    add_var_label("type", "device.type");
     add_var_label("manufacturer", "device.mfr");
+    add_var_label("manufacturing_date", "device.mfr.date");
     add_var_label("model", "device.model");
     add_var_label("battery_type", "battery.type");
     add_var_label("driver", "driver.name");
-    add_var_label("nut_version", "driver.version");
+    add_var_label("driver_version", "driver.version");
+    add_var_label("driver_version_internal", "driver.version.internal");
+    add_var_label("driver_version_data", "driver.version.data");
     add_var_label("usb_vendor_id", "ups.vendorid");
     add_var_label("usb_product_id", "ups.productid");
     add_var_label("ups_firmware", "ups.firmware");
     add_var_label("ups_type", "ups.type");
+    // Deprecated
+    add_var_label("type", "device.type");
+    add_var_label("nut_version", "driver.version");
 
     format!("{}{{{}}} 1\n",metric.metric, labels_str)
+}
+
+fn print_ups_status_metrics(ups: &str, vars: &VarMap) -> Vec<String> {
+    let metric = UPS_STATUS_METRIC;
+    let mut lines: Vec<String> = Vec::new();
+
+    let status_raw = match vars.get(metric.nut_var) {
+        Some(x) => x,
+        None => return lines,
+    };
+    let statuses: HashSet<&str> = HashSet::from_iter(status_raw.split(' '));
+
+    for state in UPS_STATUS_ELEMENTS.iter() {
+        let value_num = match statuses.contains(state) { false => 0, true => 1 };
+        lines.push(format!("{metric}{{ups=\"{ups}\",status=\"{state}\"}} {value}\n", ups=ups, metric=metric.metric, state=state, value=value_num));
+    }
+
+    lines
 }
 
 fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {
@@ -126,7 +150,7 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
                 _ => 0f64,
             }
         },
-        VarTransform::UpsStatus => {
+        VarTransform::OldUpsStatus => {
             // Remove the second component if present ("LB" etc.)
             let value_start = value.split_once(' ').map_or(value, |x| x.0);
             match value_start {

@@ -11,8 +11,10 @@ use regex::Regex;
 use url::form_urlencoded;
 
 use crate::meta::{APP_NAME, APP_AUTHOR, APP_VERSION};
+use crate::common::ErrorResult;
 use crate::config::Config;
-use crate::nut_client::scrape_nut_to_openmetrics;
+use crate::nut_client::scrape_nut;
+use crate::openmetrics_builder::build_openmetrics_content;
 
 const CONTENT_TYPE_TEXT: &str = "text/plain; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS: &str = "application/openmetrics-text; version=1.0.0; charset=UTF-8";
@@ -96,18 +98,17 @@ async fn endpoint_metrics(config: &Config, request: &Request<Body>) -> Response<
     let usage_message = format!("Usage: {}?target=<target>", config.http_path);
     let target = match parse_target(request) {
         Ok(target) => target,
-        Err(err_message) => return Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from(format!("{}\n\n{}", err_message, usage_message))).unwrap(),
+        Err(err) => return Response::builder().status(StatusCode::BAD_REQUEST).body(Body::from(format!("{}\n\n{}", err, usage_message))).unwrap(),
     };
 
     // Try to scrape NUT server
-    let (status, content) = match scrape_nut_to_openmetrics(&target).await {
-        Ok(result) => {
-            (StatusCode::OK, result)
-        },
-        Err(error) => {
-            (StatusCode::SERVICE_UNAVAILABLE, error.to_string())
-        },
+    let (upses, nut_version) = match scrape_nut(&target).await {
+        Ok(x) =>  x,
+        Err(err) => return Response::builder().status(StatusCode::SERVICE_UNAVAILABLE).body(Body::from(err.to_string())).unwrap(),
     };
+
+    // Generate OpenMetrics output
+    let content = build_openmetrics_content(&upses, &nut_version);
 
     // Set content type
     let mut content_type = CONTENT_TYPE_TEXT;
@@ -119,10 +120,10 @@ async fn endpoint_metrics(config: &Config, request: &Request<Body>) -> Response<
         }
     }
 
-    Response::builder().status(status).header("Content-Type", content_type).body(Body::from(content)).unwrap()
+    Response::builder().status(StatusCode::OK).header("Content-Type", content_type).body(Body::from(content)).unwrap()
 }
 
-fn parse_target(request: &Request<Body>) -> Result<String, &str> {
+fn parse_target(request: &Request<Body>) -> ErrorResult<String> {
     lazy_static! {
         // Match domain, IPv4 address or IPv6 addres, with optional port number
         static ref TARGET_PATTERN: Regex = Regex::new(r#"^(?P<host>\[[^\]]+\]|[^:]+)(?::(?P<port>[0-9]+))?$"#).unwrap();
@@ -131,7 +132,7 @@ fn parse_target(request: &Request<Body>) -> Result<String, &str> {
     let query_args: HashMap<String, String> = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes()).into_owned().collect();
     let target_raw = match query_args.get("target") {
         Some(target_raw) => target_raw,
-        None => return Err("Missing target."),
+        None => return Err("Missing target.".into()),
     };
 
     let default_port = Config::DEFAULT_NUT_PORT.to_string();
@@ -144,7 +145,7 @@ fn parse_target(request: &Request<Body>) -> Result<String, &str> {
             };
             format!("{}:{}", host, port)
         },
-        None => return Err("Malformed list element for VAR list query."),
+        None => return Err("Malformed list element for VAR list query.".into()),
     };
 
     Ok(target)

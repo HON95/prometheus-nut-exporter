@@ -13,7 +13,7 @@ pub enum VarTransform {
     None,
     Percentage,
     BeeperStatus,
-    UpsStatus,
+    OldUpsStatus,
 }
 
 #[derive(Debug, Clone)]
@@ -26,6 +26,19 @@ pub struct Metric {
     pub var_transform: VarTransform,
     pub is_integer: bool,
 }
+
+pub const UPS_STATUS_ELEMENTS: [&str; 10] = [
+    "OL",       // online
+    "OB",       // on battery
+    "LB",       // low battery (critical)
+    "CHRG",     // charging
+    "RB",       // replace battery
+    "FSD",      // forced shutdown
+    "BYPASS",   // battery bypass
+    "SD",       // shutdown
+    "CP",       // cable power
+    "OFF",      // off
+];
 
 // Special metrics
 pub const EXPORTER_INFO_METRIC: Metric = Metric {
@@ -55,6 +68,15 @@ pub const UPS_INFO_METRIC: Metric = Metric {
     var_transform: VarTransform::None,
     is_integer: true,
 };
+pub const UPS_STATUS_METRIC: Metric = Metric {
+    metric: "nut_ups_status",
+    help: "UPS status.",
+    type_: "stateset",
+    unit: "",
+    nut_var: "ups.status",
+    var_transform: VarTransform::None,
+    is_integer: true,
+};
 // Deprecated special metrics
 pub const OLD_SERVER_INFO_METRIC: Metric = Metric {
     metric: "nut_info",
@@ -69,15 +91,6 @@ pub const OLD_SERVER_INFO_METRIC: Metric = Metric {
 // Basic metrics
 pub static BASIC_METRICS: [Metric; 44] = [
     // Status, uptime, load
-    Metric {
-        metric: "nut_status",
-        help: "UPS status. Unknown (0), on line (1, \"OL\"), on battery (2, \"OB\"), or low battery (3, \"LB\").",
-        type_: "gauge",
-        unit: "",
-        nut_var: "ups.status",
-        var_transform: VarTransform::UpsStatus,
-        is_integer: true,
-    },
     Metric {
         metric: "nut_beeper_status",
         help: "If the beeper is enabled. Unknown (0), enabled (1), disabled (2) or muted (3).",
@@ -405,7 +418,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         var_transform: VarTransform::None,
         is_integer: false,
     },
-    // UPS power
+    // Power
     Metric {
         metric: "nut_power_watts",
         help: "Apparent power.",
@@ -444,6 +457,15 @@ pub static BASIC_METRICS: [Metric; 44] = [
     },
     // Deprecated
     Metric {
+        metric: "nut_status",
+        help: "UPS status. Unknown (0), on line (1, \"OL\"), on battery (2, \"OB\"), or low battery (3, \"LB\"). (Deprecated, use nut_ups_status instead.)",
+        type_: "gauge",
+        unit: "",
+        nut_var: "ups.status",
+        var_transform: VarTransform::OldUpsStatus,
+        is_integer: true,
+    },
+    Metric {
         metric: "nut_battery_volts",
         help: "Battery voltage. (Deprecated, use nut_battery_voltage_volts instead.)",
         type_: "gauge",
@@ -480,6 +502,7 @@ lazy_static! {
         vec.push(SERVER_INFO_METRIC.metric);
         vec.push(UPS_INFO_METRIC.metric);
         vec.push(OLD_SERVER_INFO_METRIC.metric);
+        vec.push(UPS_STATUS_METRIC.metric);
         for metric in BASIC_METRICS.iter() {
             vec.push(metric.metric);
         }
@@ -493,6 +516,7 @@ lazy_static! {
         map.insert(SERVER_INFO_METRIC.metric, &SERVER_INFO_METRIC);
         map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
         map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
+        map.insert(UPS_STATUS_METRIC.metric, &UPS_STATUS_METRIC);
         for metric in BASIC_METRICS.iter() {
             map.insert(metric.metric, metric);
         }
@@ -520,8 +544,9 @@ pub fn print_metrics() {
 
     print_metric(&EXPORTER_INFO_METRIC);
     print_metric(&SERVER_INFO_METRIC);
-    print_metric(&OLD_SERVER_INFO_METRIC);
     print_metric(&UPS_INFO_METRIC);
+    print_metric(&OLD_SERVER_INFO_METRIC);
+    print_metric(&UPS_STATUS_METRIC);
     for metric in BASIC_METRICS.iter() {
         print_metric(metric);
     }

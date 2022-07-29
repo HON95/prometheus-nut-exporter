@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::error::Error;
 
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -8,7 +7,6 @@ use tokio::net::TcpStream;
 
 use crate::common::ErrorResult;
 use crate::metrics::{NutVersion, UPS_DESCRIPTION_PSEUDOVAR, UpsVarMap, VarMap};
-use crate::openmetrics_builder::build_openmetrics_content;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 enum NutQueryListState {
@@ -19,7 +17,7 @@ enum NutQueryListState {
     Error,
 }
 
-pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn Error>> {
+pub async fn scrape_nut(target: &str) -> ErrorResult<(UpsVarMap, NutVersion)> {
     log::trace!("Connecting to NUT server: {}", target);
     let raw_stream = match TcpStream::connect(target).await {
         Ok(val) => val,
@@ -27,17 +25,13 @@ pub async fn scrape_nut_to_openmetrics(target: &str) -> Result<String, Box<dyn E
     };
     let mut stream = BufReader::new(raw_stream);
 
-    let (upses, nut_version) = match scrape_nut_upses(&mut stream).await {
-        Ok(val) => val,
-        Err(err) => return Err(format!("Failed to communicate with target: {}", err).into()),
-    };
-
-    let content = build_openmetrics_content(&upses, &nut_version);
-
-    Ok(content)
+    match scrape_nut_upses(&mut stream).await {
+        Ok(val) => Ok(val),
+        Err(err) => Err(format!("Failed to communicate with target: {}", err).into()),
+    }
 }
 
-async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> Result<(UpsVarMap, NutVersion), Box<dyn Error>> {
+async fn scrape_nut_upses(stream: &mut BufReader<TcpStream>) -> ErrorResult<(UpsVarMap, NutVersion)> {
     let mut upses: UpsVarMap = HashMap::new();
     let mut nut_version: NutVersion = "".to_owned();
 
