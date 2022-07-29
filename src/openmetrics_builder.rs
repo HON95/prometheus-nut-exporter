@@ -2,18 +2,16 @@ use std::fmt::Write as _;
 use std::collections::HashMap;
 
 use crate::meta::APP_VERSION;
-use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRICS, NUT_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
+use crate::metrics::{EXPORTER_INFO_METRIC, Metric, METRIC_NAMES, METRICS, OLD_SERVER_INFO_METRIC, SERVER_INFO_METRIC, UPS_DESCRIPTION_PSEUDOVAR, UPS_INFO_METRIC, UpsVarMap, VAR_METRICS, VarMap, VarTransform};
 
 pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String {
+    // Use vec for stable ordering of metrics within a metric family
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
 
-    // Exporter metadata
-    let exporter_info_line = print_exporter_info_metric();
-    metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(exporter_info_line);
-
-    // NUT metadata
-    let nut_info_line = print_nut_info_metric(nut_version);
-    metric_lines.get_mut(NUT_INFO_METRIC.metric).unwrap().push(nut_info_line);
+    // Exporter and server metadata
+    metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(print_exporter_info_metric());
+    metric_lines.get_mut(SERVER_INFO_METRIC.metric).unwrap().push(print_server_info_metric(nut_version));
+    metric_lines.get_mut(OLD_SERVER_INFO_METRIC.metric).unwrap().push(print_old_server_info_metric(nut_version));
 
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
@@ -33,71 +31,76 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     }
 
     // Print metric info and then all dimensions together
+    // Use METRIC_NAMES vec for stable ordering of metric families
     let mut builder: String = String::new();
-    for metric in METRICS.values() {
+    for metric_name in METRIC_NAMES.iter() {
+        let metric = METRICS[metric_name];
         if let Some(lines) = metric_lines.get(metric.metric) {
             if !lines.is_empty() {
-                builder.push_str(&print_metric_info(metric));
+                builder.push_str(&print_metric_metadata(metric));
                 builder.push_str(&lines.concat());
             }
         }
     }
+    builder.push_str("# EOF\n");
 
     builder
 }
 
-fn print_metric_info(metric: &Metric) -> String {
+fn print_metric_metadata(metric: &Metric) -> String {
     let mut builder: String = String::new();
+    let _ = writeln!(builder, "# TYPE {} {}", metric.metric, metric.type_);
+    let _ = writeln!(builder, "# UNIT {} {}", metric.metric, metric.unit);
     if !metric.nut_var.is_empty() {
         let _ = writeln!(builder, "# HELP {} {} (\"{}\")", metric.metric, metric.help, metric.nut_var);
     } else {
         let _ = writeln!(builder, "# HELP {} {}", metric.metric, metric.help);
     }
-    let _ = writeln!(builder, "# TYPE {} {}", metric.metric, metric.type_);
-    let _ = writeln!(builder, "# UNIT {} {}", metric.metric, metric.unit);
 
     builder
 }
 
 fn print_exporter_info_metric() -> String {
     let metric = EXPORTER_INFO_METRIC;
-    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=APP_VERSION)
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=escape_om(APP_VERSION))
 }
 
-fn print_nut_info_metric(nut_version: &str) -> String {
-    let metric = NUT_INFO_METRIC;
-    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=nut_version)
+fn print_server_info_metric(nut_version: &str) -> String {
+    let metric = SERVER_INFO_METRIC;
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=escape_om(nut_version))
+}
+
+fn print_old_server_info_metric(nut_version: &str) -> String {
+    let metric = OLD_SERVER_INFO_METRIC;
+    format!("{metric}{{version=\"{version}\"}} 1\n", metric=metric.metric, version=escape_om(nut_version))
 }
 
 fn print_ups_info_metric(ups: &str, vars: &VarMap) -> String {
     let metric = UPS_INFO_METRIC;
-    let empty_str = "".to_owned();
 
-    let mut attributes = HashMap::new();
-    attributes.insert("ups", ups);
-    attributes.insert("description", vars.get(UPS_DESCRIPTION_PSEUDOVAR).unwrap_or(&empty_str));
-    attributes.insert("description2", vars.get("device.description").unwrap_or(&empty_str));
-    attributes.insert("location", vars.get("device.location").unwrap_or(&empty_str));
-    attributes.insert("type", vars.get("device.type").unwrap_or(&empty_str));
-    attributes.insert("manufacturer", vars.get("device.mfr").unwrap_or(&empty_str));
-    attributes.insert("model", vars.get("device.model").unwrap_or(&empty_str));
-    attributes.insert("battery_type", vars.get("battery.type").unwrap_or(&empty_str));
-    attributes.insert("driver", vars.get("driver.name").unwrap_or(&empty_str));
-    attributes.insert("nut_version", vars.get("driver.version").unwrap_or(&empty_str));
-    attributes.insert("usb_vendor_id", vars.get("ups.vendorid").unwrap_or(&empty_str));
-    attributes.insert("usb_product_id", vars.get("ups.productid").unwrap_or(&empty_str));
-    attributes.insert("ups_firmware", vars.get("ups.firmware").unwrap_or(&empty_str));
-    attributes.insert("ups_type", vars.get("ups.type").unwrap_or(&empty_str));
-
-    let mut labels = String::new();
-    for (key, value) in attributes {
-        if !labels.is_empty() {
-            labels.push(',');
+    let mut labels_str = String::new();
+    let _ = write!(labels_str, "ups=\"{}\"", escape_om(ups));
+    let mut add_var_label = |name: &str, var: &str| {
+        if let Some(value) = vars.get(var) {
+            let _ = write!(labels_str, ",{}=\"{}\"", escape_om(name), escape_om(value));
         }
-        let _ = write!(labels, "{}=\"{}\"", key, value);
-    }
+    };
 
-    format!("{}{{{}}} 1\n",metric.metric, labels)
+    add_var_label("description", UPS_DESCRIPTION_PSEUDOVAR);
+    add_var_label("description2", "device.description");
+    add_var_label("location", "device.location");
+    add_var_label("type", "device.type");
+    add_var_label("manufacturer", "device.mfr");
+    add_var_label("model", "device.model");
+    add_var_label("battery_type", "battery.type");
+    add_var_label("driver", "driver.name");
+    add_var_label("nut_version", "driver.version");
+    add_var_label("usb_vendor_id", "ups.vendorid");
+    add_var_label("usb_product_id", "ups.productid");
+    add_var_label("ups_firmware", "ups.firmware");
+    add_var_label("ups_type", "ups.type");
+
+    format!("{}{{{}}} 1\n",metric.metric, labels_str)
 }
 
 fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<String> {
@@ -108,7 +111,7 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
                 Err(_) => return None,
             }
         },
-        VarTransform::Percent => {
+        VarTransform::Percentage => {
             let num_value = match value.parse::<f64>() {
                 Ok(val) => val,
                 Err(_) => return None,
@@ -135,5 +138,20 @@ fn print_basic_var_metric(ups: &str, value: &str, metric: &Metric) -> Option<Str
         },
     };
 
-    Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=ups, value=result_value))
+    // Make sure floats always contains a decimal point and that ints never do
+    let result_str = match metric.is_integer {
+        true => format!("{:.0}", result_value),
+        false => format!("{:.17}", result_value),
+    };
+
+    Some(format!("{metric}{{ups=\"{ups}\"}} {value}\n", metric=metric.metric, ups=escape_om(ups), value=result_str))
+}
+
+fn escape_om(raw_text: &str) -> String {
+    raw_text.chars().map(|c| match c {
+        '\n' => r#"\n"#.to_string(),
+        '"' => r#"\""#.to_string(),
+        '\\' => r#"\\"#.to_string(),
+        _ => c.to_string(),
+    }).collect()
 }

@@ -14,7 +14,7 @@ RECV_BUFFER_MAX_BYTES = 4096
 UPS_EXPECTED = "alpha"
 
 DATA_VER = """\
-Network UPS Tools upsd 2.7.4 - http://www.networkupstools.org/
+Network UPS Tools upsd 2.7.4 "yolo" - http://www.networkupstools.org/
 """
 COMMAND_UPS_LIST = "list ups"
 DATA_UPS_LIST = """\

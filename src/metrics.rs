@@ -6,12 +6,12 @@ pub type VarMap = HashMap<String, String>;
 pub type UpsVarMap = HashMap<String, VarMap>;
 pub type NutVersion = String;
 
-pub const UPS_DESCRIPTION_PSEUDOVAR: &str = "description";
+pub const UPS_DESCRIPTION_PSEUDOVAR: &str = "_description";
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum VarTransform {
     None,
-    Percent,
+    Percentage,
     BeeperStatus,
     UpsStatus,
 }
@@ -24,35 +24,49 @@ pub struct Metric {
     pub unit: &'static str,
     pub nut_var: &'static str,
     pub var_transform: VarTransform,
+    pub is_integer: bool,
 }
 
+// Special metrics
 pub const EXPORTER_INFO_METRIC: Metric = Metric {
     metric: "nut_exporter_info",
     help: "Metadata about the exporter.",
-    type_: "gauge",
+    type_: "info",
     unit: "",
     nut_var: "",
     var_transform: VarTransform::None,
+    is_integer: true,
 };
-
-pub const NUT_INFO_METRIC: Metric = Metric {
-    metric: "nut_info",
+pub const SERVER_INFO_METRIC: Metric = Metric {
+    metric: "nut_server_info",
     help: "Metadata about the NUT server.",
-    type_: "gauge",
+    type_: "info",
     unit: "",
     nut_var: "",
     var_transform: VarTransform::None,
+    is_integer: true,
 };
-
 pub const UPS_INFO_METRIC: Metric = Metric {
     metric: "nut_ups_info",
-    help: "Metadata about the UPS (e.g. model, battery type, location).",
-    type_: "gauge",
+    help: "Metadata about the UPS.",
+    type_: "info",
     unit: "",
     nut_var: "",
     var_transform: VarTransform::None,
+    is_integer: true,
+};
+// Deprecated special metrics
+pub const OLD_SERVER_INFO_METRIC: Metric = Metric {
+    metric: "nut_info",
+    help: "Metadata about the NUT server. (Depreacted, use nut_server_info instead.)",
+    type_: "info",
+    unit: "",
+    nut_var: "",
+    var_transform: VarTransform::None,
+    is_integer: true,
 };
 
+// Basic metrics
 pub static BASIC_METRICS: [Metric; 44] = [
     // Status, uptime, load
     Metric {
@@ -62,6 +76,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "",
         nut_var: "ups.status",
         var_transform: VarTransform::UpsStatus,
+        is_integer: true,
     },
     Metric {
         metric: "nut_beeper_status",
@@ -70,6 +85,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "",
         nut_var: "ups.beeper.status",
         var_transform: VarTransform::BeeperStatus,
+        is_integer: true,
     },
     Metric {
         metric: "nut_uptime_seconds",
@@ -78,6 +94,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "device.uptime",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_load",
@@ -85,15 +102,17 @@ pub static BASIC_METRICS: [Metric; 44] = [
         type_: "gauge",
         unit: "",
         nut_var: "ups.load",
-        var_transform: VarTransform::Percent,
+        var_transform: VarTransform::Percentage,
+        is_integer: false,
     },
     Metric {
         metric: "nut_temperature_celsius",
         help: "UPS temperature",
         type_: "gauge",
-        unit: "degrees C",
+        unit: "celsius",
         nut_var: "ups.temperature",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     // Battery
     Metric {
@@ -102,7 +121,8 @@ pub static BASIC_METRICS: [Metric; 44] = [
         type_: "gauge",
         unit: "",
         nut_var: "battery.charge",
-        var_transform: VarTransform::Percent,
+        var_transform: VarTransform::Percentage,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_charge_low",
@@ -110,7 +130,8 @@ pub static BASIC_METRICS: [Metric; 44] = [
         type_: "gauge",
         unit: "",
         nut_var: "battery.charge.low",
-        var_transform: VarTransform::Percent,
+        var_transform: VarTransform::Percentage,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_charge_warning",
@@ -118,7 +139,8 @@ pub static BASIC_METRICS: [Metric; 44] = [
         type_: "gauge",
         unit: "",
         nut_var: "battery.charge.warning",
-        var_transform: VarTransform::Percent,
+        var_transform: VarTransform::Percentage,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_charge_restart",
@@ -126,7 +148,8 @@ pub static BASIC_METRICS: [Metric; 44] = [
         type_: "gauge",
         unit: "",
         nut_var: "battery.charge.restart",
-        var_transform: VarTransform::Percent,
+        var_transform: VarTransform::Percentage,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_runtime_seconds",
@@ -135,6 +158,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "battery.runtime",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_battery_runtime_low_seconds",
@@ -143,6 +167,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "battery.runtime.low",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_battery_runtime_restart_seconds",
@@ -151,6 +176,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "battery.runtime.restart",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_delay_shutdown_seconds",
@@ -159,6 +185,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "ups.delay.shutdown",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_delay_start_seconds",
@@ -167,6 +194,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "seconds",
         nut_var: "ups.delay.start",
         var_transform: VarTransform::None,
+        is_integer: true,
     },
     Metric {
         metric: "nut_battery_voltage_volts",
@@ -175,6 +203,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "battery.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_voltage_nominal_volts",
@@ -183,6 +212,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "battery.voltage.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_voltage_high_volts",
@@ -191,6 +221,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "battery.voltage.high",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_voltage_low_volts",
@@ -199,14 +230,16 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "battery.voltage.low",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_battery_temperature_celsius",
         help: "Battery temperature.",
         type_: "gauge",
-        unit: "degrees C",
+        unit: "celsius",
         nut_var: "battery.temperature",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     // Input
     Metric {
@@ -216,6 +249,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_voltage_nominal_volts",
@@ -224,6 +258,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.voltage.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_voltage_minimum_volts",
@@ -232,6 +267,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.voltage.minimum",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_voltage_maximum_volts",
@@ -240,6 +276,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.voltage.maximum",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_transfer_low_volts",
@@ -248,6 +285,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.transfer.low",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_transfer_high_volts",
@@ -256,6 +294,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "input.transfer.high",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_current_amperes",
@@ -264,6 +303,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "amperes",
         nut_var: "input.current",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_current_nominal_amperes",
@@ -272,6 +312,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "amperes",
         nut_var: "input.current.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_frequency_hertz",
@@ -280,6 +321,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "input.frequency",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_frequency_nominal_hertz",
@@ -288,6 +330,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "input.frequency.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_frequency_low_hertz",
@@ -296,6 +339,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "input.frequency.low",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_frequency_high_hertz",
@@ -304,6 +348,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "input.frequency.high",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     // Output
     Metric {
@@ -313,6 +358,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "output.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_voltage_nominal_volts",
@@ -321,6 +367,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "volts",
         nut_var: "output.voltage.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_current_amperes",
@@ -329,6 +376,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "amperes",
         nut_var: "output.current",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_current_nominal_amperes",
@@ -337,6 +385,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "amperes",
         nut_var: "output.current.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_frequency_hertz",
@@ -345,6 +394,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "output.frequency",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_frequency_nominal_hertz",
@@ -353,6 +403,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "hertz",
         nut_var: "output.frequency.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     // UPS power
     Metric {
@@ -362,6 +413,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "watts",
         nut_var: "ups.power",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_power_nominal_watts",
@@ -370,6 +422,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "watts",
         nut_var: "ups.power.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_real_power_watts",
@@ -378,6 +431,7 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "watts",
         nut_var: "ups.realpower",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_real_power_nominal_watts",
@@ -386,45 +440,62 @@ pub static BASIC_METRICS: [Metric; 44] = [
         unit: "watts",
         nut_var: "ups.realpower.nominal",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
-    // Compatibility metrics
+    // Deprecated
     Metric {
         metric: "nut_battery_volts",
-        help: "Battery voltage. (Compatibility metric, use nut_battery_voltage_volts instead.)",
+        help: "Battery voltage. (Deprecated, use nut_battery_voltage_volts instead.)",
         type_: "gauge",
         unit: "volts",
         nut_var: "battery.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_input_volts",
-        help: "Input voltage. (Compatibility metric, use nut_input_voltage_volts instead.)",
+        help: "Input voltage. (Deprecated, use nut_input_voltage_volts instead.)",
         type_: "gauge",
         unit: "volts",
         nut_var: "input.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
     Metric {
         metric: "nut_output_volts",
-        help: "Output voltage. (Compatibility metric, use nut_output_voltage_volts instead.)",
+        help: "Output voltage. (Deprecated, use nut_output_voltage_volts instead.)",
         type_: "gauge",
         unit: "volts",
         nut_var: "output.voltage",
         var_transform: VarTransform::None,
+        is_integer: false,
     },
 ];
 
 lazy_static! {
+    // Contains all metrics names, in insertion order
+    pub static ref METRIC_NAMES: Vec<&'static str> = {
+        let mut vec: Vec<&'static str> = Vec::new();
+        vec.push(EXPORTER_INFO_METRIC.metric);
+        vec.push(SERVER_INFO_METRIC.metric);
+        vec.push(UPS_INFO_METRIC.metric);
+        vec.push(OLD_SERVER_INFO_METRIC.metric);
+        for metric in BASIC_METRICS.iter() {
+            vec.push(metric.metric);
+        }
+        vec
+    };
+
     // Contains all metrics, indexed by metric name
     pub static ref METRICS: HashMap<&'static str, &'static Metric> = {
         let mut map: HashMap<&'static str, &'static Metric> = HashMap::new();
         map.insert(EXPORTER_INFO_METRIC.metric, &EXPORTER_INFO_METRIC);
-        map.insert(NUT_INFO_METRIC.metric, &NUT_INFO_METRIC);
+        map.insert(SERVER_INFO_METRIC.metric, &SERVER_INFO_METRIC);
         map.insert(UPS_INFO_METRIC.metric, &UPS_INFO_METRIC);
+        map.insert(OLD_SERVER_INFO_METRIC.metric, &OLD_SERVER_INFO_METRIC);
         for metric in BASIC_METRICS.iter() {
             map.insert(metric.metric, metric);
         }
-
         map
     };
 
@@ -434,7 +505,6 @@ lazy_static! {
         for metric in BASIC_METRICS.iter() {
             map.entry(metric.nut_var).or_insert_with(Vec::new).push(metric);
         }
-
         map
     };
 }
@@ -449,7 +519,8 @@ pub fn print_metrics() {
     };
 
     print_metric(&EXPORTER_INFO_METRIC);
-    print_metric(&NUT_INFO_METRIC);
+    print_metric(&SERVER_INFO_METRIC);
+    print_metric(&OLD_SERVER_INFO_METRIC);
     print_metric(&UPS_INFO_METRIC);
     for metric in BASIC_METRICS.iter() {
         print_metric(metric);
