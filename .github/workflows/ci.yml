@@ -11,6 +11,13 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  DOCKER_BUILD_PLATFORMS: >-
+    linux/i386,
+    linux/amd64,
+    linux/arm64,
+    linux/arm/v6,
+    linux/arm/v7,
+    linux/ppc64le
   DOCKER_REPO: hon95/prometheus-nut-exporter
 
 jobs:
@@ -28,8 +35,8 @@ jobs:
       - name: Run integration test
         run: manage/integration_test.sh
 
-  publish-bleeding:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  tmp-build-test:
+    if: github.event_name == 'push'
     needs: check
     runs-on: ubuntu-22.04
     steps:
@@ -37,6 +44,10 @@ jobs:
         uses: actions/checkout@v3
       - name: Update version
         run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: ${{ DOCKER_BUILD_PLATFORMS }}
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
       - name: Login to DockerHub
@@ -49,45 +60,81 @@ jobs:
         with:
           build-args: |
             APP_VERSION=${{ env.version }}
+          platforms: ${{ DOCKER_BUILD_PLATFORMS }}
           tags: |
-            ${{ env.DOCKER_REPO }}:latest
-            ${{ env.DOCKER_REPO }}:bleeding
+            ${{ env.DOCKER_REPO }}:dev
           push: true
 
-  publish-stable:
-    if: github.event_name == 'release' && github.event.action == 'published' && startsWith(github.ref, 'refs/tags/v')
-    needs: check
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Extract version
-        run: |
-          # Get version from git tag
-          VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
-          echo "version=$VERSION" | tee -a $GITHUB_ENV
-          # Check if semantic version (3 numbers, ignore pre-release and metadata)
-          echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
-          # Extract other version representations
-          echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
-          echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
-          echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          build-args: |
-            APP_VERSION=${{ env.version }}
-          tags: |
-            ${{ env.DOCKER_REPO }}:latest
-            ${{ env.DOCKER_REPO }}:${{ env.version_major }}
-            ${{ env.DOCKER_REPO }}:${{ env.version_minor }}
-            ${{ env.DOCKER_REPO }}:${{ env.version_patch }}
-            ${{ env.DOCKER_REPO }}:stable
-          push: true
+  # publish-bleeding:
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+  #   needs: check
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #     - name: Update version
+  #       run: echo "version=$(echo 0.0.0-SNAPSHOT+$(TZ=Etc/GMT date "+%Y-%m-%dT%H:%M:%SZ"))" | tee -a $GITHUB_ENV
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
+  #       with:
+  #         platforms: ${{ DOCKER_BUILD_PLATFORMS }}
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v2
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v2
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+  #     - name: Push to Docker Hub
+  #       uses: docker/build-push-action@v3
+  #       with:
+  #         build-args: |
+  #           APP_VERSION=${{ env.version }}
+  #         platforms: ${{ DOCKER_BUILD_PLATFORMS }}
+  #         tags: |
+  #           ${{ env.DOCKER_REPO }}:latest
+  #           ${{ env.DOCKER_REPO }}:bleeding
+  #         push: true
+
+  # publish-stable:
+  #   if: github.event_name == 'release' && github.event.action == 'published' && startsWith(github.ref, 'refs/tags/v')
+  #   needs: check
+  #   runs-on: ubuntu-22.04
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #     - name: Extract version
+  #       run: |
+  #         # Get version from git tag
+  #         VERSION="$(echo ${GITHUB_REF#refs/tags/v})"
+  #         echo "version=$VERSION" | tee -a $GITHUB_ENV
+  #         # Check if semantic version (3 numbers, ignore pre-release and metadata)
+  #         echo $VERSION | grep -Po '^\d+\.\d+\.\d+'
+  #         # Extract other version representations
+  #         echo "version_major=$(echo $VERSION | grep -Po '^\d+')" | tee -a $GITHUB_ENV
+  #         echo "version_minor=$(echo $VERSION | grep -Po '^\d+\.\d+')" | tee -a $GITHUB_ENV
+  #         echo "version_patch=$(echo $VERSION | grep -Po '^\d+\.\d+\.\d+')" | tee -a $GITHUB_ENV
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
+  #       with:
+  #         platforms: ${{ DOCKER_BUILD_PLATFORMS }}
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v2
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v2
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
+  #     - name: Push to Docker Hub
+  #       uses: docker/build-push-action@v3
+  #       with:
+  #         build-args: |
+  #           APP_VERSION=${{ env.version }}
+  #         platforms: ${{ DOCKER_BUILD_PLATFORMS }}
+  #         tags: |
+  #           ${{ env.DOCKER_REPO }}:latest
+  #           ${{ env.DOCKER_REPO }}:${{ env.version_major }}
+  #           ${{ env.DOCKER_REPO }}:${{ env.version_minor }}
+  #           ${{ env.DOCKER_REPO }}:${{ env.version_patch }}
+  #           ${{ env.DOCKER_REPO }}:stable
+  #         push: true
