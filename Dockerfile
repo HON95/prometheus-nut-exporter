@@ -3,13 +3,12 @@
 ARG APP_VERSION=0.0.0-SNAPSHOT
 ARG APP_GID=5000
 ARG APP_UID=5000
-ARG APP_ENV=prod
 ARG ALPINE_VERSION=3.16
 ARG RUST_VERSION=1.62.0
 
 
 ## Build stage
-FROM --platform=$BUILDPLATFORM alpine:$ALPINE_VERSION AS build
+FROM --platform=$TARGETPLATFORM alpine:$ALPINE_VERSION AS build
 WORKDIR /app
 
 # Install Rust
@@ -26,22 +25,15 @@ RUN mkdir src \
 && cargo fetch \
 && rm -rf src/
 
-# Build real app
+# Build app
 COPY src/ src/
-# Set version
 ARG APP_VERSION
 RUN sed -i "s/^.*\bAPP_VERSION\b.*$/pub const APP_VERSION: \&str = \"$APP_VERSION\";/g" src/meta.rs
-# Break on warnings if prod
-ARG APP_ENV
-RUN echo "Build env: $APP_ENV"; \
-if [ "$APP_ENV" = "prod" ]; \
-then cargo rustc --release -- -D warnings; \
-else cargo rustc --release; \
-fi
+RUN cargo rustc --release -- -D warnings
 
 
 ## Runtime stage
-FROM --platform=$BUILDPLATFORM alpine:$ALPINE_VERSION AS runtime
+FROM --platform=$TARGETPLATFORM alpine:$ALPINE_VERSION AS runtime
 WORKDIR /app
 
 # Add non-root user
