@@ -8,16 +8,16 @@ pub fn build_openmetrics_content(upses: &UpsVarMap, nut_version: &str) -> String
     // Use vec for stable ordering of metrics within a metric family
     let mut metric_lines: HashMap<String, Vec<String>> = METRICS.keys().map(|m| ((*m).to_owned(), Vec::new())).collect();
 
-    // Exporter and server metadata
+    // Exporter and server special
     metric_lines.get_mut(EXPORTER_INFO_METRIC.metric).unwrap().push(print_exporter_info_metric());
     metric_lines.get_mut(SERVER_INFO_METRIC.metric).unwrap().push(print_server_info_metric(nut_version));
     metric_lines.get_mut(OLD_SERVER_INFO_METRIC.metric).unwrap().push(print_old_server_info_metric(nut_version));
 
     // Generate metric lines for all vars for all UPSes
     for (ups, vars) in upses.iter() {
-        // UPS metadata
+        // UPS special
         metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().push(print_ups_info_metric(ups, vars));
-        metric_lines.get_mut(UPS_INFO_METRIC.metric).unwrap().append(&mut print_ups_status_metrics(ups, vars));
+        metric_lines.get_mut(UPS_STATUS_METRIC.metric).unwrap().append(&mut print_ups_status_metrics(ups, vars));
         // UPS vars
         for (var, val) in vars.iter() {
             if let Some(metrics) = VAR_METRICS.get(var.as_str()) {
@@ -120,7 +120,7 @@ fn print_ups_status_metrics(ups: &str, vars: &VarMap) -> Vec<String> {
     let statuses: HashSet<&str> = HashSet::from_iter(status_raw.split(' '));
 
     for state in UPS_STATUS_ELEMENTS.iter() {
-        let value_num = match statuses.contains(state) { false => 0, true => 1 };
+        let value_num = match statuses.contains(state) { false => 0i64, true => 1i64 };
         lines.push(format!("{metric}{{ups=\"{ups}\",status=\"{state}\"}} {value}\n", ups=ups, metric=metric.metric, state=state, value=value_num));
     }
 
