@@ -11,12 +11,11 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  # No armv7 since QEMU breaks with it.
-  # https://github.com/rust-lang/cargo/issues/8719
   DOCKER_BUILD_PLATFORMS: >-
     linux/386,
     linux/amd64,
     linux/arm/v6,
+    linux/arm/v7,
     linux/arm64/v8,
     linux/ppc64le,
   DOCKER_REPO: hon95/prometheus-nut-exporter
@@ -41,6 +40,12 @@ jobs:
     needs: check
     runs-on: ubuntu-22.04
     steps:
+      # - name: Create tmpfs Docker dir
+      #   run: |
+      #     # Workaround for https://github.com/rust-lang/cargo/issues/8719
+      #     sudo mkdir -p /var/lib/docker
+      #     sudo mount -t tmpfs -o size=10G none /var/lib/docker
+      #     sudo systemctl restart docker
       - name: Checkout code
         uses: actions/checkout@v3
       - name: Update version

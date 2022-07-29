@@ -10,9 +10,9 @@ FROM alpine:$ALPINE_VERSION AS builder
 WORKDIR /app
 
 # Install Rust
-RUN apk add --no-cache build-base rustup
+RUN apk add --no-cache build-base curl
 ARG RUST_VERSION
-RUN rustup-init --default-toolchain=$RUST_VERSION -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | ash -s -- --default-toolchain=$RUST_VERSION -y
 ENV PATH="$PATH:/root/.cargo/bin"
 
 # Fetch deps using dummy app
