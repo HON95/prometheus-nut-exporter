@@ -17,7 +17,10 @@ function check_fail {
 }
 
 echo "Running Clippy ..."
-cargo clippy -- -D warnings -A clippy::branches-sharing-code
+clippy_args="-D warnings \
+-A clippy::branches-sharing-code \
+-A clippy::vec-init-then-push"
+cargo clippy -- $clippy_args
 check_fail
 
 echo

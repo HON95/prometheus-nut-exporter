@@ -14,7 +14,7 @@ RECV_BUFFER_MAX_BYTES = 4096
 UPS_EXPECTED = "alpha"
 
 DATA_VER = """\
-Network UPS Tools upsd 2.7.4 - http://www.networkupstools.org/
+Network UPS Tools upsd 2.7.4 "yolo" - http://www.networkupstools.org/
 """
 COMMAND_UPS_LIST = "list ups"
 DATA_UPS_LIST = """\
@@ -62,7 +62,7 @@ VAR alpha ups.model "2200R"
 VAR alpha ups.productid "0601"
 VAR alpha ups.realpower.nominal "2200"
 VAR alpha ups.serial "HIDDEN"
-VAR alpha ups.status "OL"
+VAR alpha ups.status "OL CHRG"
 VAR alpha ups.timer.shutdown "-60"
 VAR alpha ups.timer.start "-60"
 VAR alpha ups.vendorid "0764"
