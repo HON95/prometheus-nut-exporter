@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added metric `nut_ups_status` as a state set with support for many UPS statuses (`OL`, `OB`, `LB`, `CHRG` etc.).
 - Added labels `driver_version`, `driver_version_internal`, `driver_version_data` and `manufacturing_date` to the `nut_ups_info` metric.
 - Added proper signal handling to shutdown gracefully and not hang.
+- Added multi-architecture support (Docker images for different architectures will get published to Docker Hub).
 
 ### Changed
 
