@@ -4,7 +4,7 @@ ARG APP_UID=5000
 ARG APP_ENV=prod
 
 ## Build stage
-FROM rust:1.62-buster AS build
+FROM --platform=$BUILDPLATFORM rust:1.62-slim-bullseye AS build
 WORKDIR /app
 
 COPY Cargo.toml ./
@@ -30,7 +30,7 @@ else cargo rustc --release; \
 fi
 
 ## Runtime stage
-FROM debian:11-slim AS runtime
+FROM --platform=$BUILDPLATFORM debian:11-slim AS runtime
 # Default log level
 ENV RUST_LOG=info
 WORKDIR /app
