@@ -1,5 +1,3 @@
-# Note: "--platform=$BUILDPLATFORM" is required to avoid a QEMU build bug.
-
 ARG APP_VERSION=0.0.0-SNAPSHOT
 ARG APP_GID=5000
 ARG APP_UID=5000
@@ -7,8 +5,8 @@ ARG ALPINE_VERSION=3.16
 ARG RUST_VERSION=1.62.0
 
 
-## Build stage
-FROM --platform=$TARGETPLATFORM alpine:$ALPINE_VERSION AS build
+## Builder stage
+FROM alpine:$ALPINE_VERSION AS builder
 WORKDIR /app
 
 # Install Rust
@@ -33,7 +31,7 @@ RUN cargo rustc --release -- -D warnings
 
 
 ## Runtime stage
-FROM --platform=$TARGETPLATFORM alpine:$ALPINE_VERSION AS runtime
+FROM alpine:$ALPINE_VERSION AS runtime
 WORKDIR /app
 
 # Add non-root user
@@ -42,7 +40,7 @@ ARG APP_UID
 RUN addgroup -S -g $APP_GID app && adduser -S -G app -u $APP_UID app
 
 # Add executable
-COPY --from=build /app/target/release/prometheus-nut-exporter ./
+COPY --from=builder /app/target/release/prometheus-nut-exporter ./
 RUN chown app:app prometheus-nut-exporter
 
 USER app
