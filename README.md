@@ -107,12 +107,6 @@ Use e.g. `1` for stable v1.y.z releases and `latest` for bleeding/dev/unstable r
 
 See [metrics](metrics.md).
 
-## References
-
-- [NUT: GENERICUPS(8)](https://networkupstools.org/docs/man/genericups.html)
-- [NUT Developer Guide: 9. Network protocol information](https://networkupstools.org/docs/developer-guide.chunked/ar01s09.html)
-- [NUT Developer Guide: A.1. Variables](https://networkupstools.org/docs/developer-guide.chunked/apas01.html)
-
 ## License
 
 GNU General Public License version 3 (GPLv3).

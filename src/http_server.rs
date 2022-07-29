@@ -8,6 +8,7 @@ use hyper::service::{make_service_fn, service_fn};
 use hyper::server::conn::AddrStream;
 use lazy_static::lazy_static;
 use regex::Regex;
+use tokio::sync::broadcast::Receiver;
 use url::form_urlencoded;
 
 use crate::meta::{APP_NAME, APP_AUTHOR, APP_VERSION};
@@ -20,28 +21,36 @@ const CONTENT_TYPE_TEXT: &str = "text/plain; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS: &str = "application/openmetrics-text; version=1.0.0; charset=UTF-8";
 const CONTENT_TYPE_OPENMETRICS_BASE: &str = "application/openmetrics-text";
 
-pub async fn run_server(config: Config) {
+pub async fn run_server(config: Config, mut shutdown_channel: Receiver<bool>) {
+    // Bind to endpoint
     let endpoint = SocketAddr::new(config.http_address, config.http_port);
-    let service_maker = make_service_fn(move |conn:  &AddrStream| {
-        let config = config.clone();
-        let remote_addr = conn.remote_addr();
-        async move {
-            Ok::<_, Infallible>(service_fn(move |request: Request<Body>| {
-                entrypoint(config.clone(), request, remote_addr)
-            }))
-        }
-    });
-
-    let server = match Server::try_bind(&endpoint) {
-        Ok(builder) => builder.serve(service_maker),
+    log::info!("Binding to endpoint: http://{}", endpoint);
+    let server_builder = match Server::try_bind(&endpoint) {
+        Ok(builder) => builder,
         Err(err) => {
             log::error!("Server failed to bind to endpoint: {}", err);
             return;
         },
     };
 
-    log::info!("Listening on http://{}", endpoint);
-    if let Err(err) = server.await {
+    // Setup server
+    let shutdown_future = async {
+        shutdown_channel.recv().await.unwrap();
+    };
+    let config1 = config.clone();
+    let service_maker = make_service_fn(move |conn:  &AddrStream| {
+        let config2 = config1.clone();
+        let remote_addr = conn.remote_addr();
+        async move {
+            Ok::<_, Infallible>(service_fn(move |request: Request<Body>| {
+                entrypoint(config2.clone(), request, remote_addr)
+            }))
+        }
+    });
+    let server_task = server_builder.serve(service_maker).with_graceful_shutdown(shutdown_future);
+
+    // Run server
+    if let Err(err) = server_task.await {
         log::error!("Server error: {}", err);
     }
 }

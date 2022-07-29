@@ -2,7 +2,6 @@ ARG APP_VERSION=0.0.0-SNAPSHOT
 ARG APP_GID=5000
 ARG APP_UID=5000
 ARG APP_ENV=prod
-ARG TINI_VERSION=v0.19.0
 
 ## Build stage
 FROM rust:1.58-buster AS build
@@ -36,11 +35,6 @@ FROM debian:10-slim AS runtime
 ENV RUST_LOG=info
 WORKDIR /app
 
-# Add tini to properly handle signals
-ARG TINI_VERSION
-ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
-RUN chmod +x /tini
-
 # Add non-root user
 ARG APP_GID
 ARG APP_UID
@@ -51,4 +45,4 @@ COPY --from=build /app/target/release/prometheus-nut-exporter ./
 RUN chown app:app prometheus-nut-exporter
 
 USER app
-ENTRYPOINT ["/tini", "./prometheus-nut-exporter"]
+ENTRYPOINT ["./prometheus-nut-exporter"]

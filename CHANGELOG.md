@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for binding to a specific IP address through the `HTTP_ADDRESS` environment variable (@nsapa).
 - Added metric `nut_ups_status` as a state set with support for many UPS statuses (`OL`, `OB`, `LB`, `CHRG` etc.).
 - Added labels `driver_version`, `driver_version_internal`, `driver_version_data` and `manufacturing_date` to the `nut_ups_info` metric.
+- Added proper signal handling to shutdown gracefully and not hang.
 
 ### Changed
 
@@ -33,6 +34,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deprecated `nut_battery_volts`, `nut_input_volts` and `nut_output_volts`. Replacements were added in v1.1.0.
 
 ### Removed
+
+- Removed the tini init system from the Docker image, since signals are handled properly now.
 
 ### Fixed
 
