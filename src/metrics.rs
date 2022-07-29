@@ -70,7 +70,7 @@ pub const UPS_INFO_METRIC: Metric = Metric {
 };
 pub const UPS_STATUS_METRIC: Metric = Metric {
     metric: "nut_ups_status",
-    help: "UPS status.",
+    help: "UPS status. Check for a specific status with the \"status\" label.",
     type_: "stateset",
     unit: "",
     nut_var: "ups.status",
@@ -80,7 +80,7 @@ pub const UPS_STATUS_METRIC: Metric = Metric {
 // Deprecated special metrics
 pub const OLD_SERVER_INFO_METRIC: Metric = Metric {
     metric: "nut_info",
-    help: "Metadata about the NUT server. (Depreacted, use nut_server_info instead.)",
+    help: "Metadata about the NUT server. (Deprecated, use nut_server_info instead.)",
     type_: "info",
     unit: "",
     nut_var: "",
