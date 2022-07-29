@@ -4,8 +4,6 @@ services:
   exporter:
     build:
       context: ../..
-      args:
-        - APP_ENV=dev
     environment:
       - TZ=Europe/Oslo
       - RUST_BACKTRACE=1
