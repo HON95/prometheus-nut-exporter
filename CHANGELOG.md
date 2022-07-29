@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.2.0] - 2022-07-29
+
+### Added
+
 - Added metrics (@uncleBorsch):
     - `nut_temperature_celsius` (`ups.temperature`)
     - `nut_delay_shutdown_seconds` (`ups.delay.shutdown`)
@@ -40,9 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed typo in `device.mfr` variable (@nsapa).
-
-### Security
+- Fixed typo in the `device.mfr` variable (@nsapa).
 
 ## [1.1.1] - 2021-04-11
 
