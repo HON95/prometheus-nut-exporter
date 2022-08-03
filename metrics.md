@@ -71,7 +71,10 @@ The `nut_ups_status` metric family describes a set of statuses, specified in the
 | `BYPASS` | Battery bypass |
 | `SD` | Shutdown |
 | `CP` | Cable power |
+| `BOOST` | Boosted voltage |
 | `OFF` | Off |
+
+Which statuses different UPSes support varies, but `OL` (online) and `OB` (on battery) is (almost?) always supported.
 
 ## Miscellanea
 

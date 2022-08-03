@@ -27,7 +27,7 @@ pub struct Metric {
     pub is_integer: bool,
 }
 
-pub const UPS_STATUS_ELEMENTS: [&str; 10] = [
+pub const UPS_STATUS_ELEMENTS: [&str; 11] = [
     "OL",       // online
     "OB",       // on battery
     "LB",       // low battery (critical)
@@ -37,6 +37,7 @@ pub const UPS_STATUS_ELEMENTS: [&str; 10] = [
     "BYPASS",   // battery bypass
     "SD",       // shutdown
     "CP",       // cable power
+    "BOOST",    // boosted voltage
     "OFF",      // off
 ];
 

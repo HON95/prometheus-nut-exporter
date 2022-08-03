@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 
+## [1.2.1] - 2022-08-03
+
+### Added
+
+- Added `BOOST` status to the `nut_ups_status` state set.
+
 ## [1.2.0] - 2022-07-29
 
 ### Added
