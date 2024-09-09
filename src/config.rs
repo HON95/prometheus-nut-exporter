@@ -34,7 +34,6 @@ pub fn read_config() -> Config {
             config.http_address = http_address;
         }
     }
-    
     if let Ok(http_port_str) = std::env::var("HTTP_PORT") {
         if let Ok(http_port) = http_port_str.parse::<u16>() {
             config.http_port = http_port;
@@ -50,8 +49,6 @@ pub fn read_config() -> Config {
             config.print_metrics_and_exit = print_metrics_and_exit;
         }
     }
-
-    // Establish user settings for how metrics are generated
     if let Ok(ups_power_from_load_percentage_str) = std::env::var("UPS_POWER_FROM_LOAD_PERCENTAGE") {
         if let Ok(ups_power_from_load_percentage) = ups_power_from_load_percentage_str.parse::<bool>() {
             config.ups_power_from_load_percentage = ups_power_from_load_percentage;
