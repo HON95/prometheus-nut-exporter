@@ -102,6 +102,7 @@ Use e.g. `1` for stable v1.y.z releases and `latest` for bleeding/dev/unstable r
 - `HTTP_PORT` (defaults to `9995`): The HTTP server port.
 - `HTTP_PATH` (defaults to `nut`): The HTTP server metrics path. You may want to set it to `/metrics` on new setups to avoid extra Prometheus configuration (not changed here due to compatibility).
 - `PRINT_METRICS_AND_EXIT` (defaults to `false`): Print a Markdown-formatted table consisting of all metrics and then immediately exit. Used mainly for generating documentation.
+- `UPS_POWER_FROM_LOAD_PERCENTAGE` (defaults to `false`): when set to `true` and a value for `ups.power` is not available from a UPS, an approximate value will be calculated for the metric `nut_power_watts` (Apparent Power). Useful for UPS units that do not report the load in Watts, like some CyberPower units. The calculation will be: `( ups.load / 100.00 ) * ups.realpower.nominal`. 
 
 ## Metrics
 
