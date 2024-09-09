@@ -6,6 +6,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 
 use crate::common::ErrorResult;
+use crate::config;
 use crate::metrics::{NutVersion, UPS_DESCRIPTION_PSEUDOVAR, UpsVarMap, VarMap};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -99,26 +100,52 @@ async fn query_nut_vars(stream: &mut BufReader<TcpStream>, upses: &mut UpsVarMap
     }
 
     for (ups, vars) in upses.iter_mut() {
-        let line_consumer = |line: &str| {
-            let captures_opt = VAR_PATTERN.captures(line);
-            match captures_opt {
-                Some(captures) => {
-                    let variable = captures["var"].to_owned();
-                    let value = captures["val"].to_owned();
-                    vars.insert(variable, value);
-                },
-                None => {
-                    return Err("Malformed list element for VAR list query.".into());
-                },
-            }
+        {
+            let line_consumer = |line: &str| {
+                let captures_opt = VAR_PATTERN.captures(line);
+                match captures_opt {
+                    Some(captures) => {
+                        let variable = captures["var"].to_owned();
+                        let value = captures["val"].to_owned();
+                        vars.insert(variable, value);
+                    },
+                    None => {
+                        return Err("Malformed list element for VAR list query.".into());
+                    },
+                }
 
-            Ok(())
-        };
+                Ok(())
+            };
 
-        query_nut_list(stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
+            query_nut_list(stream, format!("LIST VAR {}", ups).as_str(), line_consumer).await?;
+        }
+
+        override_nut_values(vars).await;
     }
 
     Ok(())
+}
+
+
+async fn override_nut_values(vars: &mut HashMap<String, String>) {
+    let config = config::read_config();
+
+    // For UPS systems where ups.power is not available, but ups.load and ups.realpower.nominal are.
+    // Provide a calculated value for ups.power with the following algorithm:
+    //     power (W) = ( load(%) / 100.00 ) * nominal power (W)
+    if config.ups_power_from_load_percentage {
+        if !( vars.contains_key("ups.power") ) && vars.contains_key("ups.load") && vars.contains_key("ups.realpower.nominal") {
+            if let (Ok(load), Ok(nominal_power)) = (
+                vars.get("ups.load").unwrap().parse::<f64>(),
+                vars.get("ups.realpower.nominal").unwrap().parse::<f64>(),
+            ) {
+                let calculated_power = (load / 100.0) * nominal_power;
+                vars.insert(String::from("ups.power"), calculated_power.to_string());
+            } else {
+                log::error!("Unable to parse ups.load or ups.realpower.nominal as floats, skipping calculation of ups.power from these values");
+            }
+        }
+    }
 }
 
 async fn query_nut_list<F>(stream: &mut BufReader<TcpStream>, query: &str, mut line_consumer: F) -> ErrorResult<()>
