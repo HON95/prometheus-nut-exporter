@@ -133,17 +133,15 @@ async fn override_nut_values(vars: &mut HashMap<String, String>) {
     // For UPS systems where ups.power is not available, but ups.load and ups.realpower.nominal are.
     // Provide a calculated value for ups.power with the following algorithm:
     //     power (W) = ( load(%) / 100.00 ) * nominal power (W)
-    if config.ups_power_from_load_percentage {
-        if !( vars.contains_key("ups.power") ) && vars.contains_key("ups.load") && vars.contains_key("ups.realpower.nominal") {
-            if let (Ok(load), Ok(nominal_power)) = (
-                vars.get("ups.load").unwrap().parse::<f64>(),
-                vars.get("ups.realpower.nominal").unwrap().parse::<f64>(),
-            ) {
-                let calculated_power = (load / 100.0) * nominal_power;
-                vars.insert(String::from("ups.power"), calculated_power.to_string());
-            } else {
-                log::error!("Unable to parse ups.load or ups.realpower.nominal as floats, skipping calculation of ups.power from these values");
-            }
+    if config.ups_power_from_load_percentage && !( vars.contains_key("ups.power") ) && vars.contains_key("ups.load") && vars.contains_key("ups.realpower.nominal") {
+        if let (Ok(load), Ok(nominal_power)) = (
+            vars.get("ups.load").unwrap().parse::<f64>(),
+            vars.get("ups.realpower.nominal").unwrap().parse::<f64>(),
+        ) {
+            let calculated_power = (load / 100.0) * nominal_power;
+            vars.insert(String::from("ups.power"), calculated_power.to_string());
+        } else {
+            log::error!("Unable to parse ups.load or ups.realpower.nominal as floats, skipping calculation of ups.power from these values");
         }
     }
 }
