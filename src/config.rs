@@ -6,6 +6,7 @@ pub struct Config {
     pub http_port: u16,
     pub http_path: String,
     pub print_metrics_and_exit: bool,
+    pub ups_power_from_load_percentage: bool,
 }
 
 impl Config {
@@ -16,6 +17,7 @@ impl Config {
     const DEFAULT_HTTP_PORT: u16 = 9995;
     const DEFAULT_HTTP_PATH: &'static str = "/nut";
     const DEFAULT_PRINT_METRICS_AND_EXIT: bool = false;
+    const DEFAULT_UPS_POWER_FROM_LOAD_PERCENTAGE: bool = false;
 }
 
 pub fn read_config() -> Config {
@@ -24,6 +26,7 @@ pub fn read_config() -> Config {
         http_port: Config::DEFAULT_HTTP_PORT,
         http_path: Config::DEFAULT_HTTP_PATH.to_owned(),
         print_metrics_and_exit: Config::DEFAULT_PRINT_METRICS_AND_EXIT,
+        ups_power_from_load_percentage: Config::DEFAULT_UPS_POWER_FROM_LOAD_PERCENTAGE,
     };
 
     if let Ok(http_address_str) = std::env::var("HTTP_ADDRESS") {
@@ -31,7 +34,6 @@ pub fn read_config() -> Config {
             config.http_address = http_address;
         }
     }
-
     if let Ok(http_port_str) = std::env::var("HTTP_PORT") {
         if let Ok(http_port) = http_port_str.parse::<u16>() {
             config.http_port = http_port;
@@ -45,6 +47,11 @@ pub fn read_config() -> Config {
     if let Ok(print_metrics_and_exit_str) = std::env::var("PRINT_METRICS_AND_EXIT") {
         if let Ok(print_metrics_and_exit) = print_metrics_and_exit_str.parse::<bool>() {
             config.print_metrics_and_exit = print_metrics_and_exit;
+        }
+    }
+    if let Ok(ups_power_from_load_percentage_str) = std::env::var("UPS_POWER_FROM_LOAD_PERCENTAGE") {
+        if let Ok(ups_power_from_load_percentage) = ups_power_from_load_percentage_str.parse::<bool>() {
+            config.ups_power_from_load_percentage = ups_power_from_load_percentage;
         }
     }
 
