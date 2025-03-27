@@ -55,7 +55,6 @@ scrape_configs:
     static_configs:
       # Insert NUT server address here
       - targets: ["nut-server:3493"]
-    metrics_path: /nut
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
